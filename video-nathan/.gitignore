@@ -1,0 +1,4 @@
+node_modules
+out/*
+!out/patatra_9x16.mp4
+!out/voix_off.srt

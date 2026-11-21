@@ -1,0 +1,17 @@
+{
+  "name": "nathan-patatra-video",
+  "version": "1.0.0",
+  "description": "Vidéo verticale 9:16 « Patatra » — animation 3D blocky (Three.js) rendue image par image",
+  "scripts": {
+    "preview": "node render.mjs --preview",
+    "render": "node render.mjs",
+    "audio": "node audio.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/luckiest-guy": "^5.1.0",
+    "three": "^0.170.0"
+  },
+  "type": "module"
+}
