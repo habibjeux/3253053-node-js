@@ -115,41 +115,43 @@ function sneakySection(t0, t1, gain = 1) {
     if (bar % 2) put(t + beat * 2.5, bell(mtof(ch[2] + 24), 0.6), 0.05 * gain, 0.3);
   }
 }
-sneakySection(0, 40);
-put(0, waves(40), 0.08);
-for (const t of [1.5, 9, 21, 33]) put(t, gull(), 0.08, 0.5);
-put(40, pad([mtof(43), mtof(50), mtof(55)], 12.2, 1.0), 0.16);
-put(40, waves(12), 0.06);
-for (let t = 48.2; t < 52; t += 0.75) put(t, heartbeat(), 0.35);
-put(52, pad([mtof(43), mtof(46), mtof(50), mtof(53)], 19, 2.0), 0.12);
-for (let t = 52; t < 71; t += beat / 2) put(t, pluck(mtof(Math.floor((t - 52) / beat) % 2 ? 86 : 79), 0.08, 0.9), 0.05, (Math.floor((t - 52) / (beat / 2)) % 2 ? 0.5 : -0.5));
-sneakySection(62, 71, 0.5);
-put(71, pad([mtof(42), mtof(49), mtof(54)], 12, 0.6), 0.2);
-put(80, riser(3.0), 0.28);
-put(83, pad([mtof(43), mtof(50), mtof(58), mtof(62)], DURATION - 83, 0.3), 0.22);
-put(83, boum(), 0.9); put(83, bell(mtof(55), 3.5, [1, 2.01, 3.02, 4.1], [1, 0.6, 0.4, 0.2]), 0.3);
+sneakySection(0, 31.6);
+put(0, waves(31.6), 0.08);
+for (const t of [1.0, 9, 21, 28]) put(t, gull(), 0.07, 0.5);
+put(31.6, pad([mtof(43), mtof(50), mtof(55)], 15.5, 1.0), 0.16);
+put(31.6, waves(15.5), 0.06);
+for (let t = 34.6; t < 47.1; t += 0.8) put(t, heartbeat(), 0.3);
+put(47.1, pad([mtof(43), mtof(46), mtof(50), mtof(53)], 16, 2.0), 0.12);
+for (let t = 47.1; t < 62.9; t += beat / 2) put(t, pluck(mtof(Math.floor((t - 47.1) / beat) % 2 ? 86 : 79), 0.08, 0.9), 0.05, (Math.floor((t - 47.1) / (beat / 2)) % 2 ? 0.5 : -0.5));
+put(62.9, pad([mtof(42), mtof(49), mtof(54)], 8.8, 0.6), 0.2);
+put(68.6, riser(2.9), 0.28);
+put(71.5, pad([mtof(43), mtof(50), mtof(58), mtof(62)], DURATION - 71.5, 0.3), 0.22);
+put(71.5, boum(), 0.9); put(71.5, bell(mtof(55), 3.5, [1, 2.01, 3.02, 4.1], [1, 0.6, 0.4, 0.2]), 0.3);
 put(EV.endTitle, bell(mtof(67), 3, [1, 2.76, 5.4], [1, 0.4, 0.2]), 0.25);
 
 // ---------- bruitages placés ----------
-EV.boardFlash.forEach((t) => put(t, bip(), 0.15));
-put(EV.bikeBrake, skid(0.6), 0.35);
-put(EV.bikeBip, bip(), 0.4); put(EV.bikeBip + 0.25, ding(1760), 0.25);
-put(EV.crowdLook, pop(), 0.2);
-put(20.0 + 3.0, bell(mtof(96), 0.8), 0.1);
-put(EV.milaSneeze - 0.3, sneeze(), 0.5); put(EV.milaSneeze + 0.4, ding(1760), 0.25); put(EV.milaSneeze + 0.2, bip(), 0.2);
-put(EV.purse + 0.3, bell(mtof(55), 1.6, [1, 1.5, 2], [1, 0.5, 0.3]), 0.25);
-EV.whispers.forEach((t) => put(t, highpass(Float32Array.from(len(0.6), () => noise() * 0.4), 0.85), 0.15));
-EV.waves.forEach((t) => put(t, sonar(1.8), 0.3));
-EV.whooshes.forEach((t) => put(t - 0.25, whoosh(0.55), 0.45));
+put(EV.bikeBrake, skid(0.5), 0.3); put(EV.bikeBip, bip(), 0.35); put(EV.bikeBip + 0.2, ding(1760), 0.22);
+put(EV.stomp, boum(), 0.6); put(EV.stomp + 0.2, ding(1760), 0.25);
+put(EV.sneezeP - 0.3, sneeze(), 0.4); put(EV.sneezeP + 0.3, ding(1760), 0.25);
+EV.leoSneeze.forEach((t, k) => { put(t - 0.3, sneeze(), 0.45); put(t + 0.3, ding(1760 + k * 200), 0.25); });
+put(EV.purse, bell(mtof(55), 1.6, [1, 1.5, 2], [1, 0.5, 0.3]), 0.2);
+put(23.3, bell(mtof(96), 0.8), 0.1);
+EV.cascade.forEach((t, k) => { put(t, bip(), 0.15, (k % 2 ? 0.5 : -0.5)); put(t + 0.05, ding(1660 + k * 40), 0.12); });
+for (const t of [10.2, 10.9]) put(t, highpass(Float32Array.from(len(0.6), () => noise() * 0.4), 0.85), 0.12);
+EV.waves.forEach((t) => put(t, sonar(1.8), 0.28));
+for (let k = 0; k < 8; k++) put(EV.allCounters + k * 0.05, ding(1500 + k * 90), 0.12, (k % 2 ? 0.6 : -0.6));
+EV.fakeSounds.forEach((t, k) => put(t, k === 0 ? sneeze() : k === 1 ? bip() : k === 2 ? boum() : ding(1300), 0.2, (k % 2 ? 0.5 : -0.5)));
+EV.whooshes.forEach((t) => put(t - 0.25, whoosh(0.55), 0.4));
+put(EV.milaScreen, pop(), 0.15); put(EV.pecheurScreen, pop(), 0.15);
 put(EV.bigScreen, bell(mtof(84), 1.2), 0.15);
-for (let t = EV.billsStart; t < 83; t += 0.05 + rnd() * 0.08) put(t, highpass(Float32Array.from(len(0.05), () => noise() * 0.5), 0.7), 0.05, rnd() * 0.6);
-EV.safeCounter.forEach((t, k) => { put(t, bell(2093 + k * 300, 1.0), 0.25); put(t, pop(), 0.2); });
+for (let t = EV.billsStart; t < 71.5; t += 0.05 + rnd() * 0.08) put(t, highpass(Float32Array.from(len(0.05), () => noise() * 0.5), 0.7), 0.04, rnd() * 0.6);
+EV.safeCounter.forEach((t, k) => { put(t, bell(2093 + k * 300, 1.0), 0.22); });
 put(EV.photo, shutter(), 0.6);
-put(EV.doorSlam + 0.3, clang(), 0.75);
-put(EV.vaneOn, hiss(0.35), 0.3);
-put(EV.glassesGlint, bell(mtof(96), 0.8), 0.12);
-put(EV.rumble - 0.2, rumble(3.2), 0.6);
-put(EV.liftOff, rumble(4.5), 0.55); put(EV.liftOff + 0.2, hiss(4.0), 0.25);
+put(EV.doorSlam, clang(), 0.7);
+put(EV.vaneOn, hiss(0.35), 0.25);
+put(EV.glassesGlint, bell(mtof(96), 0.8), 0.1);
+put(EV.rumble - 0.1, rumble(1.8), 0.6);
+put(EV.liftOff, rumble(5.0), 0.55); put(EV.liftOff + 0.2, hiss(5.0), 0.22);
 
 // ---------- normalisation + WAV ----------
 let peak = 0; for (let i = 0; i < N; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));

@@ -245,267 +245,326 @@ function gulls(t, center = V3(0, 0, 10)) {
 function sea(t) { for (const f of R.foam) { const u = f.userData; f.position.set(u.x + Math.sin(t * 0.4 + u.ph * 6) * 2, -1.14, u.z + frac(t * 0.02 + u.ph) * 8); } R.boats.forEach((b, k) => { b.rotation.z = Math.sin(t * 1.2 + k) * 0.04; b.position.y = -1.0 + Math.sin(t * 1.5 + k) * 0.08; }); }
 function crowd(list, t, area) { list.forEach(([c, x, z, h, sp], k) => { const d = t * sp; c.at(x + Math.sin(h) * d, 0, z + Math.cos(h) * d, h); c.tiptoe(t * 6 + k); }); }
 
-// ---------------- les plans ----------------
+// ---------------- les plans (calés sur la voix-off) ----------------
 const SHOTS = [];
 const shot = (t0, t1, fn) => SHOTS.push({ t0, t1, fn });
 const DAYCROWD = () => [[C.p1, -8, -4, 0.4, 0.7], [C.p2, 6, 4, -2.4, 0.6], [C.p3, -3, 8, 2.6, 0.6], [C.p4, 2, -6, 1.2, 0.7]];
+const sneezePose = (c, t, ts) => {
+  if (t < ts - 0.5) return;
+  if (t < ts) { const u = range(t, ts - 0.5, ts); c.headG.rotation.x = -0.45 * u; c.torso.rotation.x = -0.15 * u; c.setFace('surprised'); }
+  else if (t < ts + 0.35) { c.headG.rotation.x = 0.4; c.torso.rotation.x = 0.35; c.setFace('pain'); c.armL.rotation.x = c.armR.rotation.x = -1.2; }
+};
 
-// 1A — plan large : ville, port, phare
-shot(0, 4, (lt, t) => {
+// « Dans cette ville, faire du bruit coûte 15 €. » — plan large puis livreur
+shot(0, 1.6, (lt, t) => {
   setMode('day'); shadowAt(0, 0, 0, 50); board(0, false);
-  camKeys(lt, [[0, [70, 48, 95], [8, 8, -2], 44], [4, [30, 22, 48], [0, 6, -6], 50]], (u) => u);
+  camKeys(lt, [[0, [70, 48, 95], [8, 8, -2], 44], [1.6, [42, 30, 62], [2, 6, -4], 48]], (u) => u);
   crowd(DAYCROWD(), t);
+  OV.fade = 1 - range(lt, 0, 0.3);
 });
-// 1B — le panneau : BRUIT AUTORISÉ 0 dB / AMENDE 15 €
-shot(4, 8, (lt, t) => {
-  setMode('day'); shadowAt(0, 0, -6, 20);
-  const alert = t > EV.boardFlash[0] && t < EV.boardFlash[0] + 1.2 && frac(t * 4) < 0.5;
-  board(t > EV.boardFlash[0] ? 0.1 : 0, alert);
-  camKeys(lt, [[0, [3, 1.6, 8], [0, 7.5, -11], 58], [4, [1.5, 2.6, 4], [0, 9.6, -11], 56]]);
-  C.p1.at(-2.5 + lt * 0.9, 0, -3, Math.PI / 2).tiptoe(lt * 6); C.p1.headG.rotation.x = -0.35;
-  C.p2.at(3, 0, -2 - lt * 0.3, -Math.PI / 2 - 0.3).tiptoe(lt * 6 + 1); C.p2.setFace('scared');
+shot(1.6, 3.0, (lt, t) => {
+  setMode('day'); board(t > EV.bikeBip ? 0.4 : 0, t > EV.bikeBip && frac(t * 4) < 0.5);
+  const tb = EV.bikeBrake - 1.6, v = 7;
+  const x = lt < tb ? -4 + lt * v : -4 + tb * v + (1 - Math.exp(-5 * (lt - tb))) * 1.4;
+  const B = R.bike; B.visible = true; B.position.set(x, 0, 4); B.rotation.set(lt > tb ? -Math.sin(range(lt, tb, tb + 0.4) * Math.PI) * 0.12 : 0, Math.PI / 2, 0);
+  const L = C.livreur; L.at(x, 0.45, 4, Math.PI / 2); L.sit(); L.hips.position.y = 1.0;
+  L.legL.rotation.x = L.legR.rotation.x = -1.2; L.armL.rotation.x = L.armR.rotation.x = -1.2;
+  L.torso.rotation.x = 0.25 + (lt > tb ? Math.sin(range(lt, tb, tb + 0.4) * Math.PI) * 0.3 : 0);
+  L.setFace(lt < tb ? 'happy' : 'surprised');
+  shadowAt(x, 0, 4, 12);
+  look([x + 1.2, 2.0, 11.0], [x - 0.2, 1.8, 4], 50);
+  const tbip = EV.bikeBip - 1.6;
+  sensorOn(0, lt > tbip && frac(lt * 4) < 0.6);
+  bubble('bip', HEAD(L).add(V3(1.2, -0.6, 0)), lt - tbip, 0.6, 50);
+  popup('-15 €', HEAD(L), lt - tbip - 0.15, { size: 120, dur: 1.2 });
 });
-// 1C — tout le monde marche sur la pointe des pieds
-shot(8, 12.5, (lt, t) => {
+// « Un pas un peu trop fort, ding, 15 € » — panneau + pas lourd
+shot(3.0, 5.7, (lt, t) => {
+  setMode('day'); shadowAt(0, 0, -4, 18);
+  const ts = EV.stomp;
+  board(t > ts ? 0.75 : 0.05, t > ts && t < ts + 1.2 && frac(t * 4) < 0.5);
+  camKeys(lt, [[0, [2.6, 1.8, 6.5], [-1.0, 4.4, -6], 58], [2.7, [2.2, 2.0, 5.6], [-0.8, 5.2, -7], 58]]);
+  const P = C.p2; const x = -2.6 + Math.min(lt, ts - 3.0) * 1.2;
+  P.at(x, 0, -2.2, Math.PI / 2);
+  if (t < ts - 0.3) P.walk(lt * 6, 0.55);
+  else if (t < ts) { P.legR.rotation.x = -1.3 * range(t, ts - 0.3, ts - 0.12); P.setFace('neutral'); }
+  else { P.legR.rotation.x = -1.3 * (1 - range(t, ts, ts + 0.08)); P.setFace(t < ts + 0.5 ? 'surprised' : 'scared'); }
+  if (t > ts && t < ts + 0.25) shake(0.05, t);
+  comic('BOUM', 360, 1560, t - ts, { size: 90, color: '#ff8c1a', dur: 0.6 });
+  popup('-15 €', HEAD(P), t - ts - 0.2, { size: 120, dur: 1.4 });
+  C.p1.at(2.6, 0, -1, -Math.PI / 2 - 0.3).tiptoe(lt * 6);
+});
+// « un éternuement, ding, encore 15. »
+shot(5.7, 8.1, (lt, t) => {
+  setMode('day'); board(t > EV.sneezeP ? 0.6 : 0, t > EV.sneezeP + 0.2 && t < EV.sneezeP + 1.2 && frac(t * 4) < 0.5);
+  const P = C.p4; P.at(-3.2, 0, 1.0, 0.5); P.setFace('neutral'); sneezePose(P, t, EV.sneezeP);
+  if (t > EV.sneezeP + 0.35) P.setFace('scared');
+  shadowAt(-3, 0, 1, 10);
+  camKeys(lt, [[0, [-1.6, 1.8, 6.4], [-3.4, 1.9, 0.6], 46], [2.4, [-1.8, 1.9, 5.8], [-3.3, 2.1, 0.6], 44]]);
+  comic('ATCHOUM !', 540, 560, t - EV.sneezeP, { size: 120, color: '#7df9ff', rot: 0.08, dur: 0.9 });
+  popup('-15 €', HEAD(P), t - EV.sneezeP - 0.3, { size: 120, dur: 1.5 });
+  C.p3.at(-0.6, 0, -2.6 + lt * 0.4, 0.2).tiptoe(lt * 6);
+});
+// « …tout le monde marche sur la pointe des pieds… »
+shot(8.1, 10.1, (lt, t) => {
   setMode('day'); shadowAt(0, 0, 2, 14); board(0, false);
   look([3.2 - lt * 0.3, 0.55, 5.6], [-0.5, 0.9, 1.2], 52);
-  C.p3.at(-4 + lt * 1.1, 0, 1.5, Math.PI / 2).tiptoe(lt * 7); C.p3.setFace('scared');
-  C.p4.at(3 - lt * 0.9, 0, -0.5, -Math.PI / 2).tiptoe(lt * 7 + 2); C.p4.setFace('neutral');
+  C.p3.at(-3.5 + lt * 1.1, 0, 1.5, Math.PI / 2).tiptoe(lt * 7); C.p3.setFace('scared');
+  C.p4.at(2.8 - lt * 0.9, 0, -0.5, -Math.PI / 2).tiptoe(lt * 7 + 2);
   C.p1.at(-1 + lt * 0.3, 0, -4, 0.3).tiptoe(lt * 6);
-  comic('TIP… TIP… TIP…', 540, 520, lt - 0.6, { size: 90, color: '#ffffff', rot: -0.05, dur: 3.2, burst: false });
+  comic('TIP… TIP…', 540, 520, lt - 0.2, { size: 90, color: '#ffffff', rot: -0.05, dur: 1.8, burst: false });
 });
-// 1D — le livreur freine : bip ! -15 €
-shot(12.5, 17, (lt, t) => {
+// « …et parle en chuchotant. » (chaussons épais)
+shot(10.1, 11.9, (lt, t) => {
+  setMode('day'); board(0, false); shadowAt(-20, 0, -2, 12);
+  const A = C.s1, B = C.s2;
+  A.at(-20.5, 0, -2.5, 0.9); B.at(-19.0, 0, -1.6, -2.3);
+  A.armR.rotation.x = -2.3; A.armR.rotation.z = 0.5; A.headG.rotation.y = 0.3; A.setFace('scared');
+  B.headG.rotation.z = 0.15; B.setFace('surprised'); B.torso.rotation.x = 0.1;
+  look([-18.6, 2.0, 5.6], [-19.8, 1.5, -2.0], 42);
+  bubble('chut…', HEAD(A), lt - 0.1, 1.6, 58);
+  bubble('psst…', HEAD(B), lt - 0.8, 1.0, 58);
+});
+// « Moi, c'est Léo, et j'ai le rhume une semaine sur deux. »
+shot(11.9, 14.5, (lt, t) => {
   setMode('day'); board(0, false);
-  const tb = EV.bikeBrake - 12.5;
-  const v = 6;
-  const x = lt < tb ? -18 + lt * v : -18 + tb * v + (1 - Math.exp(-5 * (lt - tb))) * 1.6;
-  const B = R.bike; B.visible = true; B.position.set(x, 0, 4); B.rotation.set(lt > tb ? -Math.sin(range(lt, tb, tb + 0.4) * Math.PI) * 0.12 : 0, Math.PI / 2, 0);
-  const L = C.livreur; L.at(x, 0.45, 4, Math.PI / 2); L.sit(); L.hips.position.y = 1.0; L.legL.rotation.x = -1.2 + Math.sin(lt * 9) * 0.4 * (lt < tb ? 1 : 0); L.legR.rotation.x = -1.2 - Math.sin(lt * 9) * 0.4 * (lt < tb ? 1 : 0);
-  L.armL.rotation.x = L.armR.rotation.x = -1.2; L.torso.rotation.x = 0.25 + (lt > tb ? Math.sin(range(lt, tb, tb + 0.4) * Math.PI) * 0.3 : 0);
-  L.setFace(lt < tb ? 'happy' : lt < tb + 0.6 ? 'surprised' : 'pain');
-  shadowAt(x, 0, 4, 12);
-  look([x + 1.5, 2.2, 11.5], [x, 1.6, 4], 50);
-  const tbip = EV.bikeBip - 12.5;
-  sensorOn(0, lt > tbip && lt < tbip + 1.8 && frac(lt * 4) < 0.6);
-  bubble('bip', HEAD(L).add(V3(1.2, -0.6, 0)), lt - tbip, 0.6, 50);
-  popup('-15 €', HEAD(L), lt - tbip - 0.25, { size: 120, dur: 1.6 });
-  comic('SKRIIIIK !', 540, 620, lt - tb, { size: 110, color: '#ff8c1a', rot: -0.08, dur: 0.8 });
-  C.p2.at(x + 4, 0, 0.5, -0.4).tiptoe(lt * 6); C.p2.setFace(lt > tbip ? 'surprised' : 'neutral');
+  const L = C.leo; const z = 2 + lt * 1.0; L.at(-6, 0, z, 0.15); L.walk(lt * 6, 0.5); L.setFace(lt < 1.4 ? 'happy' : 'pain');
+  L.armR.rotation.x = lt > 1.5 ? -2.0 : L.armR.rotation.x; // mouchoir
+  shadowAt(-6, 0, z, 10);
+  look([-4.6, 2.0, z + 5.0], [-6, 1.9, z], 46);
+  tag('LÉO', HEAD(L), lt - 0.2, 2.2, '#ffd23f', '#2fa84f');
+  comic('SNIF…', 760, 760, lt - 1.6, { size: 80, color: '#cfe8ff', rot: 0.1, dur: 1.0, burst: false });
 });
-// 1E — les passants lèvent les yeux vers le compteur géant
-shot(17, 20, (lt, t) => {
-  setMode('day'); shadowAt(0, 0, -4, 18);
-  board(0.9, frac(t * 3) < 0.5, 'LIVREUR : -15 €');
-  camKeys(lt, [[0, [-0.5, 1.2, 9.5], [0, 7.5, -11], 60], [3, [-0.5, 1.6, 8], [0, 9, -11], 56]]);
-  [[C.p1, -2.4, 1.5], [C.p2, 1.6, 1.0], [C.p3, -0.6, 3.2], [C.p4, 2.8, 3.6], [C.s1, -3.6, 4.2]].forEach(([c, x, z], k) => {
-    c.at(x, 0, z, Math.PI + (x * -0.04)); c.headG.rotation.x = -0.45 * smooth(range(lt, 0.1 + k * 0.12, 0.6 + k * 0.12)); c.setFace(k % 2 ? 'surprised' : 'scared');
-  });
-  C.livreur.at(4.6, 0, -2, -2.4); C.livreur.setFace('pain'); C.livreur.armR.rotation.x = -2.6;
+// « Atchoum, 15 € ; atchoum, 30. »
+shot(14.5, 17.4, (lt, t) => {
+  setMode('day');
+  const [s1, s2] = EV.leoSneeze;
+  board(t > s1 ? (t > s2 ? 0.9 : 0.6) : 0, (t > s1 && t < s1 + 0.8) || (t > s2 && t < s2 + 0.8) ? frac(t * 4) < 0.5 : false);
+  const L = C.leo; L.at(-6, 0, 4.6, 0.3); L.setFace('neutral');
+  sneezePose(L, t, s1); if (t > s1 + 0.35) sneezePose(L, t, s2);
+  if (t > s2 + 0.35) L.setFace('scared');
+  shadowAt(-7, 0, 3, 12);
+  camKeys(lt, [[0, [-4.4, 1.7, 9.0], [-6.4, 2.4, 2.4], 50], [2.9, [-4.6, 1.8, 9.6], [-6.8, 3.0, 1.6], 54]]);
+  sensorOn(0, (t > s1 + 0.1 && t < s1 + 1.0) || (t > s2 + 0.1 && t < s2 + 1.0));
+  comic('ATCHOUM !', 540, 560, t - s1, { size: 120, color: '#7df9ff', rot: -0.08, dur: 0.8 });
+  comic('ATCHOUM !', 540, 640, t - s2, { size: 130, color: '#7df9ff', rot: 0.08, dur: 0.9 });
+  popup('-15 €', HEAD(L), t - s1 - 0.3, { size: 115, dur: 1.2 });
+  popup('-30 €', HEAD(L), t - s2 - 0.3, { size: 135, dur: 1.3 });
 });
-
-// 2F — zoom sur le phare qui surplombe la ville (M. Vane sur la galerie)
-shot(20, 24, (lt, t) => {
-  setMode('day'); shadowAt(28, 14, 8, 30); board(0, false);
-  const top = LANTERN.clone().add(V3(0, -3, 0));
-  camKeys(lt, [[0, [-8, 2.4, 10], top.toArray(), 42], [2.2, [-8, 2.4, 10], top.toArray(), 16], [4, [-7.5, 2.6, 9.5], [top.x, top.y - 1.2, top.z], 12]]);
-  C.vane.at(LH.x - 3.05, LH.y + 26.1, LH.z + 0.3, -Math.PI / 2); C.vane.setFace('smirk'); C.vane.armR.rotation.x = -0.3;
-  C.vane.root.updateMatrixWorld(true);
-  sparkle(C.vane.glasses.getWorldPosition(V3()), lt - 3.0, 90);
-  crowd([[C.p3, -3, 4, 1.6, 0.6], [C.p4, 2, 2, -1.5, 0.6]], t);
-});
-// 2G — Mila éternue : -15 €
-shot(24, 30, (lt, t) => {
-  setMode('day'); board(0, false);
-  const ts = EV.milaSneeze - 24;
-  const M = C.mila;
-  const x = -12.5 + Math.min(lt, ts - 0.6) * 1.3;
-  M.at(x, 0, 8, Math.PI / 2);
-  if (lt < ts - 0.6) { M.walk(lt * 7, 0.5); M.setFace('happy'); }
-  else if (lt < ts) { const u = range(lt, ts - 0.6, ts); M.headG.rotation.x = -0.45 * u; M.torso.rotation.x = -0.15 * u; M.setFace('surprised'); }
-  else if (lt < ts + 0.35) { M.headG.rotation.x = 0.4; M.torso.rotation.x = 0.35; M.setFace('pain'); M.armL.rotation.x = M.armR.rotation.x = -1.2; }
-  else { M.setFace(lt < ts + 1.4 ? 'surprised' : 'scared'); M.headG.rotation.y = -0.6 * smooth(range(lt, ts + 0.5, ts + 1)); }
-  shadowAt(x, 0, 8, 12);
-  camKeys(lt, [[0, [-10.5, 1.4, 12.8], [-11.5, 1.0, 8], 46], [ts - 0.5, [-9.6, 1.4, 12.6], [-9.9, 1.0, 8], 46], [ts + 0.8, [-9.4, 1.8, 13.4], [-9.6, 2.0, 6], 54], [6, [-9.3, 1.9, 13.6], [-9.5, 2.2, 5.5], 54]]);
-  sensorOn(0, lt > ts + 0.2 && frac(lt * 4) < 0.6);
-  comic('ATCHOUM !', 540, 600, lt - ts, { size: 120, color: '#7df9ff', rot: 0.08, dur: 1.0 });
-  popup('-15 €', HEAD(M), lt - ts - 0.4, { size: 120, dur: 1.8 });
-  tag('MILA', HEAD(M), lt - 0.3, 2.0, '#1d1b2a', '#ffd23f');
-  C.p1.at(-4, 0, 11, -1.2).tiptoe(lt * 6); C.p1.setFace(lt > ts ? 'surprised' : 'neutral');
-});
-// 2H — porte-monnaie vide
-shot(30, 34, (lt, t) => {
+// « À la fin du mois, mon argent de poche disparaît… »
+shot(17.4, 20.6, (lt, t) => {
   setMode('day'); board(0, false); shadowAt(-7, 0, 8, 10);
-  const M = C.mila; M.at(-7, 0, 8, 0.25); M.setFace(lt < 1.2 ? 'scared' : 'cry');
-  M.armL.rotation.x = M.armR.rotation.x = -0.75; M.armL.rotation.z = 0.25; M.armR.rotation.z = -0.25; M.headG.rotation.x = 0.35;
-  M.root.updateMatrixWorld(true);
-  const hand = M.armR.localToWorld(V3(-0.3, -0.95, 0.2));
+  const L = C.leo; L.at(-7, 0, 8, 0.25); L.setFace(t < EV.purse + 0.5 ? 'surprised' : 'pain');
+  L.armL.rotation.x = L.armR.rotation.x = -0.9; L.armL.rotation.z = 0.25; L.armR.rotation.z = -0.25; L.headG.rotation.x = 0.35;
+  L.root.updateMatrixWorld(true);
+  const hand = L.armR.localToWorld(V3(-0.3, -0.95, 0.2));
   R.purse.visible = true; R.purse.position.copy(hand); R.purse.rotation.set(0, 0.25, 0);
   R.purseLid.rotation.x = -1.8 * smooth(range(t, EV.purse, EV.purse + 0.5));
-  camKeys(lt, [[0, [-5.6, 1.5, 13.8], [-7, 1.0, 8], 40], [4, [-5.9, 1.4, 12.8], [-7, 0.95, 8], 36]]);
-  comic('0 €', 540, 400, t - EV.purse - 0.3, { size: 200, color: '#ff2e4d', dur: 3, rot: -0.06 });
-  sparkle(hand.clone().add(V3(0, 0.3, 0)), t - EV.purse - 0.2, 40);
+  camKeys(lt, [[0, [-5.6, 2.0, 13.6], [-7, 1.6, 8], 40], [3.2, [-5.9, 1.8, 12.6], [-7, 1.4, 8], 36]]);
+  for (let k = 0; k < 4; k++) popup('-15 €', hand.clone().add(V3((k - 1.5) * 0.4, 0.2, 0)), t - EV.purse - 0.2 - k * 0.25, { size: 70, color: '#ff2e4d', dur: 1.0 });
+  comic('0 €', 540, 420, t - EV.purse - 1.2, { size: 200, color: '#ff2e4d', dur: 2.2, rot: -0.06 });
 });
-// 2I — chuchotements et chaussons épais
-shot(34, 40, (lt, t) => {
+// « Le système appartient à M. Vane, le gardien du vieux phare. »
+shot(20.6, 23.8, (lt, t) => {
+  setMode('day'); shadowAt(28, 14, 8, 30); board(0, false);
+  const top = LANTERN.clone().add(V3(0, -3, 0));
+  camKeys(lt, [[0, [-8, 2.4, 10], top.toArray(), 42], [1.8, [-8, 2.4, 10], top.toArray(), 16], [3.2, [-7.5, 2.6, 9.5], [top.x, top.y - 1.2, top.z], 12]]);
+  C.vane.at(LH.x - 3.05, LH.y + 26.1, LH.z + 0.3, -Math.PI / 2); C.vane.setFace('smirk'); C.vane.armR.rotation.x = -0.3;
+  C.vane.root.updateMatrixWorld(true);
+  sparkle(C.vane.glasses.getWorldPosition(V3()), lt - 2.4, 90);
+  tag('M. VANE', HEAD(C.vane), lt - 1.9, 1.3, '#ffffff', '#5c677d');
+  crowd([[C.p3, -3, 4, 1.6, 0.6], [C.p4, 2, 2, -1.5, 0.6]], t);
+});
+// « …les amendes explosent même quand la rue est déserte : »
+shot(23.8, 27.7, (lt, t) => {
+  setMode('day'); shadowAt(0, 0, 0, 30);
+  const n = EV.cascade.filter((c) => t > c).length;
+  board(Math.min(1, n / 7), n > 0 && frac(t * 4) < 0.5, n ? `AMENDES : ${n * 15} €` : 'AMENDE : 15 €');
+  camKeys(lt, [[0, [10, 6, 22], [-4, 3, -4], 48], [3.9, [4, 5, 18], [-6, 3.5, -6], 50]]);
+  const order = [3, 4, 0, 1, 7, 2, 5];
+  EV.cascade.forEach((c, k) => { const s = R.sensors[order[k]]; const on = t > c && t < c + 0.9; sensorOn(order[k], on); popup('-15 €', s.pos.clone().add(V3(0, 1.2, 0)), t - c, { size: 90, dur: 1.0 }); });
+  comic('PERSONNE ?!', 540, 520, lt - 1.2, { size: 100, color: '#ffffff', rot: -0.06, dur: 2.0 });
+});
+// « la boulangère, le pêcheur et même ma petite sœur Mila ont tout perdu. »
+shot(27.7, 31.6, (lt, t) => {
   setMode('day'); board(0, false);
-  if (lt < 3) {
-    shadowAt(-20, 0, -2, 12);
-    const A = C.s1, B = C.s2;
-    A.at(-20.5, 0, -2.5, 0.9); B.at(-19.0, 0, -1.6, -2.3);
-    A.armR.rotation.x = -2.3; A.armR.rotation.z = 0.5; A.headG.rotation.y = 0.3; A.setFace('scared');
-    B.headG.rotation.z = 0.15; B.setFace('surprised'); B.torso.rotation.x = 0.1;
-    look([-18.6, 2.0, 5.6], [-19.8, 1.5, -2.0], 42);
-    bubble('chut…', HEAD(A), t - EV.whispers[0], 1.3, 58);
-    bubble('psst…', HEAD(B), t - EV.whispers[1], 1.3, 58);
-  } else {
-    const u = lt - 3;
-    const P = C.pecheur; P.at(-14, 0.0, 19 + u * 0.7, 0); P.tiptoe(u * 5); P.setFace('scared'); P.armR.rotation.x = -0.6;
+  if (lt < 1.2) {
+    const B = C.boul; B.at(-8, 0, -19.6, 0.1); B.setFace('cry'); B.armL.rotation.x = B.armR.rotation.x = -0.9; B.armL.rotation.z = -0.4; B.armR.rotation.z = 0.4;
+    shadowAt(-8, 0, -19, 10);
+    look([-6.6, 2.4, -14.2], [-8, 2.6, -20], 46);
+    tag('LA BOULANGÈRE', HEAD(B), lt - 0.05, 1.1, '#1d1b2a', '#ffb4a2');
+  } else if (lt < 2.4) {
+    const u = lt - 1.2;
+    const P = C.pecheur; P.at(-14, 0, 21, 0.2); P.setFace('cry'); P.headG.rotation.x = 0.3;
     shadowAt(-14, 0, 21, 10);
-    camKeys(u, [[0, [-12.0, 0.9, 27.5], [-14, 0.5, 20.5], 46], [3, [-12.2, 1.7, 28.5], [-14, 1.6, 21.5], 50]]);
-    bubble('chut…', HEAD(P), t - EV.whispers[2], 1.4, 58);
-    tag('LE PÊCHEUR', HEAD(P), u - 0.2, 1.4, '#1d1b2a', '#ffd000');
+    look([-12.4, 1.5, 26.8], [-14, 1.6, 21], 46);
+    tag('LE PÊCHEUR', HEAD(P), u - 0.05, 1.1, '#1d1b2a', '#ffd000');
+  } else {
+    const u = lt - 2.4;
+    const M = C.mila; M.at(-7, 0, 8, 0.25); M.setFace('cry');
+    M.armL.rotation.x = M.armR.rotation.x = -0.75; M.armL.rotation.z = 0.25; M.armR.rotation.z = -0.25; M.headG.rotation.x = 0.35;
+    M.root.updateMatrixWorld(true);
+    R.purse.visible = true; R.purse.position.copy(M.armR.localToWorld(V3(-0.3, -0.95, 0.2))); R.purse.rotation.set(0, 0.25, 0); R.purseLid.rotation.x = -1.8;
+    shadowAt(-7, 0, 8, 10);
+    look([-5.8, 1.4, 12.4], [-7, 1.0, 8], 40);
+    tag('MILA', HEAD(M), u - 0.05, 1.1, '#1d1b2a', '#ffd23f');
+    comic('0 €', 540, 420, u - 0.3, { size: 180, color: '#ff2e4d', dur: 1.0, rot: -0.06 });
   }
 });
-
-// 3J — nuit : Léo se faufile
-shot(40, 43, (lt, t) => {
+// « Pourtant, la nuit, la ville est censée être calme. »
+shot(31.6, 34.5, (lt, t) => {
+  setMode('night'); shadowAt(0, 0, 0, 50, [-0.4, 1, 0.6]); board(0, false);
+  R.beam.visible = false;
+  camKeys(lt, [[0, [-30, 30, 50], [10, 8, -4], 46], [2.9, [-24, 24, 42], [10, 10, -2], 46]], (u) => u);
+  OV.vignette = 0.7; OV.fade = 1 - range(lt, 0, 0.45);
+  comic('Z z z', 760, 760, lt - 0.4, { size: 90, color: '#cfe8ff', rot: 0.1, dur: 2.4, burst: false });
+});
+// « Jeudi soir, je n'ai pas dormi. »
+shot(34.5, 36.4, (lt, t) => {
   setMode('night'); shadowAt(4, 0, 6, 16, [-0.4, 1, 0.6]); board(0, false);
   const L = C.leo; const x = -2 + lt * 1.6; L.at(x, 0, 6, Math.PI / 2 - 0.15); L.sneak(lt * 7); L.setFace('determined');
   look([x - 5.2, 1.3, 9.2], [x + 8, 8, 7], 60);
   fill.position.set(x - 1, 3, 8); fill.intensity = 12; fill.color.set('#ffcf8a');
-  OV.title = { text: 'MINUIT', age: lt, sub: 'LA VILLE DORT…' }; OV.vignette = 0.7;
-  OV.fade = 1 - range(lt, 0, 0.45);
-  tag('LÉO', HEAD(L), lt - 0.6, 1.8, '#ffd23f', '#2fa84f');
-  comic('Z z z', 820, 760, lt - 0.2, { size: 80, color: '#cfe8ff', rot: 0.1, dur: 2.6, burst: false });
+  OV.title = { text: 'JEUDI SOIR', age: lt, sub: '23 H 59' }; OV.vignette = 0.7;
 });
-// 3K — faisceau et onde sonore depuis la lanterne
-shot(43, 48, (lt, t) => {
-  setMode('night'); OV.vignette = 0.7; board(0, false);
+// « À minuit, depuis le sommet du phare, un faisceau… et déclenché tous les compteurs »
+function ringsAt(t) {
   for (let k = 0; k < R.rings.length; k++) {
     const age = t - EV.waves[k]; const r = R.rings[k];
     if (age < 0 || age > 2.6) continue;
     r.visible = true; const rad = 1 + age * 26; r.scale.setScalar(rad); r.position.set(LANTERN.x, LANTERN.y - age * 9, LANTERN.z);
     r.material.opacity = 0.6 * (1 - age / 2.6);
   }
+}
+shot(36.4, 41.9, (lt, t) => {
+  setMode('night'); OV.vignette = 0.7; board(0, false);
+  ringsAt(t);
+  const all = t > EV.allCounters && t < EV.allCounters + 1.3;
   R.sensors.forEach((s, k) => {
     const d = Math.hypot(s.pos.x - LANTERN.x, s.pos.z - LANTERN.z);
-    let on = false; for (const w of EV.waves) { const age = t - w; if (age > 0 && Math.abs(1 + age * 26 - d) < 5) on = true; }
+    let on = all && frac(t * 4) < 0.6; for (const w of EV.waves) { const age = t - w; if (age > 0 && Math.abs(1 + age * 26 - d) < 5) on = true; }
     sensorOn(k, on);
+    if (all) popup('-15 €', s.pos.clone().add(V3(0, 1.2, 0)), t - EV.allCounters - k * 0.05, { size: 80, dur: 1.2 });
   });
-  if (lt < 2.5) { camKeys(lt, [[0, [22, 46, 26], [6, 12, -6], 52], [2.5, [20, 44, 24], [4, 8, -6], 54]]); shadowAt(10, 0, 0, 40, [-0.4, 1, 0.6]); }
-  else { camKeys(lt, [[2.5, [-12, 9, 19], [8, 6, 2], 56], [5, [-11, 8, 17.5], [9, 7, 3], 54]]); shadowAt(0, 0, 4, 25, [-0.4, 1, 0.6]); }
+  if (lt < 2.6) { camKeys(lt, [[0, [22, 46, 26], [6, 12, -6], 52], [2.6, [20, 44, 24], [4, 8, -6], 54]]); shadowAt(10, 0, 0, 40, [-0.4, 1, 0.6]); }
+  else { camKeys(lt, [[2.6, [-12, 9, 19], [8, 6, 2], 56], [5.5, [-11, 8, 17.5], [9, 7, 3], 54]]); shadowAt(0, 0, 4, 25, [-0.4, 1, 0.6]); }
+  OV.title = lt < 1.6 ? { text: 'MINUIT', age: lt, sub: null } : null;
   comic('VWOOOM…', 540, 1640, t - EV.waves[0], { size: 90, color: '#7df9ff', rot: -0.05, dur: 1.4, burst: false });
 });
-// 3L — Léo grimpe la falaise
-shot(48, 52, (lt, t) => {
+// « M. Vane diffusait des sons enregistrés dans les rues… »
+shot(41.9, 45.6, (lt, t) => {
   setMode('night'); OV.vignette = 0.7; board(0, false);
-  const L = C.leo; const tc = EV.climbStart - 48;
-  let y = 0, x = 21.2;
-  if (lt < tc) { L.at(19 + lt * 10, 0, 13, Math.PI / 2); L.sneak(lt * 9); }
-  else if (lt < 3.5) { y = 12.6 * smooth(range(lt, tc, 3.5)); L.at(x, y, 13, Math.PI / 2); L.climb(lt * 6); }
-  else { const u = range(lt, 3.5, 4); L.at(lerp(x, 22.8, u), lerp(12.6, 14.2, u), 13, Math.PI / 2); L.climb(0); }
-  L.setFace('determined');
+  const w0 = 41.9; for (let k = 0; k < R.rings.length; k++) { const age = frac((t - w0) * 0.45 + k / 4) * 2.2; const r = R.rings[k]; r.visible = true; r.scale.setScalar(1 + age * 26); r.position.set(LANTERN.x, LANTERN.y - age * 9, LANTERN.z); r.material.opacity = 0.5 * (1 - age / 2.2); }
+  camKeys(lt, [[0, [6, 6, 22], [26, 28, 10], 50], [3.7, [8, 7, 20], [26, 30, 10], 46]]);
+  shadowAt(10, 0, 10, 30, [-0.4, 1, 0.6]);
+  const words = ['ATCHOUM !', 'BIP !', 'BOUM !', 'TOC TOC !', 'DRING !'];
+  const spots = [1, 3, 4, 0, 7];
+  EV.fakeSounds.forEach((ft, k) => { const s = R.sensors[spots[k]]; sensorOn(spots[k], t > ft && t < ft + 0.8); bubble(words[k], s.pos.clone().add(V3(0, 1.6, 0)), t - ft, 0.9, 56); });
+  tag('SONS ENREGISTRÉS', LANTERN.clone().add(V3(0, 4.5, 0)), lt - 0.3, 3.0, '#7df9ff', '#1d1b2a');
+});
+// « Je suis monté jusqu'au phare. »
+shot(45.6, 47.1, (lt, t) => {
+  setMode('night'); OV.vignette = 0.7; board(0, false);
+  const L = C.leo; const y = 12.6 * smooth(range(lt, 0, 1.3)); const x = lt < 1.3 ? 21.2 : lerp(21.2, 22.8, range(lt, 1.3, 1.5));
+  L.at(x, lt < 1.3 ? y : lerp(12.6, 14.2, range(lt, 1.3, 1.5)), 13, Math.PI / 2); L.climb(lt * 9); L.setFace('determined');
   const ly = L.root.position.y;
   shadowAt(22, ly, 13, 14, [-0.4, 1, 0.6]);
   look([14.5, ly + 2.2, 21.5], [21.5, ly + 2.8, 12.5], 56);
   fill.position.set(18, ly + 3, 16); fill.intensity = 20; fill.color.set('#9fb8ff');
 });
-
-// 4M — la salle de contrôle
-shot(52, 57, (lt, t) => {
-  setMode('interior'); bigShowsVane(false); bigHot(false); eqAnim(t); billsAt(t, 0.5); safeText('84 300 €', false);
-  I.door.position.x = I.doorOpenX;
+// salle de contrôle : aides
+function room(t, { bills = 0.5, safe = '84 300 €', door = I.doorOpenX } = {}) { setMode('interior'); eqAnim(t); billsAt(t, bills); safeText(safe, false); I.door.position.x = door; }
+// « Là-haut, des écrans affichaient chaque habitant… »
+shot(47.1, 50.6, (lt, t) => {
+  room(t); bigShowsVane(false); bigHot(false);
   const L = C.leo;
-  if (lt < 2) { const u = range(lt, 0, 2); L.at(0, 0, lerp(9.5, 3.2, u), Math.PI); L.walk(lt * 7, 0.5); L.setFace('surprised'); }
-  else { L.at(0, 0, 3.2, Math.PI); L.setFace('surprised'); L.headG.rotation.y = Math.sin((lt - 2) * 1.2) * 0.6; }
-  const pan = range(lt, 2, 5);
+  if (lt < 1.6) { const u = range(lt, 0, 1.6); L.at(0, 0, lerp(9.5, 3.2, u), Math.PI); L.walk(lt * 7, 0.5); L.setFace('surprised'); }
+  else { L.at(0, 0, 3.2, Math.PI); L.setFace('surprised'); L.headG.rotation.y = Math.sin((lt - 1.6) * 1.2) * 0.6; }
   for (let k = 0; k < 4; k++) feeHot(k, false);
-  if (lt > 2) { const order = [1, 0, 2, 3]; const idx = Math.min(3, Math.floor(pan * 4)); feeHot(order[idx], true); }
-  if (lt < 2) look([1.6, 3.0, -3.5], [0, 2.2, 7], 56);
-  else {
-    const a = lerp(-1.25, 1.25, smooth(pan));
-    look([0, 4.0, 3.2], [Math.sin(a) * 7.5, 4.2, -Math.cos(a) * 7.5], 50);
-  }
-  comic('ÉTERNUEMENT = 15 € ?!', 540, 1640, lt - 2.4, { size: 72, color: '#7df9ff', rot: -0.04, dur: 1.6, burst: false });
+  if (lt < 1.4) look([1.6, 3.0, -3.5], [0, 2.2, 7], 56);
+  else { const a = lerp(-1.25, -0.4, smooth(range(lt, 1.4, 3.5))); look([0, 4.0, 3.2], [Math.sin(a) * 7.5, 4.2, -Math.cos(a) * 7.5], 50); feeHot(lt < 2.4 ? 1 : 0, true); }
 });
-// 4N — LÉO : 420 € — RECORD DE LA SEMAINE
-shot(57, 62, (lt, t) => {
-  setMode('interior'); bigShowsVane(false); eqAnim(t); billsAt(t, 0.5); safeText('84 300 €', false); I.door.position.x = I.doorOpenX;
+// « Mila, 90 € ; le pêcheur, 240… »
+shot(50.6, 54.4, (lt, t) => {
+  room(t); bigShowsVane(false); bigHot(false);
+  feeHot(0, false); feeHot(1, false);
+  feeHot(2, t > EV.milaScreen && t < EV.pecheurScreen); feeHot(3, t > EV.pecheurScreen);
+  const L = C.leo; L.at(0, 0, 3.2, Math.PI + 0.5); L.setFace('scared');
+  const f2 = I.fees[2].mesh.position, f3 = I.fees[3].mesh.position;
+  camKeys(lt, [[0, [-0.5, 4.1, 1.6], f2.toArray(), 42], [1.8, [-0.3, 4.1, 1.4], f2.toArray(), 40], [2.2, [-0.6, 4.0, 2.4], f3.toArray(), 42], [3.8, [-0.4, 4.0, 2.2], f3.toArray(), 40]]);
+});
+// « Et tout en haut, en rouge : Léo, record de la semaine. »
+shot(54.4, 57.7, (lt, t) => {
+  room(t); bigShowsVane(false);
   const on = t > EV.bigScreen; bigHot(on && frac(t * 3) < 0.5);
   for (let k = 0; k < 4; k++) feeHot(k, false);
   const L = C.leo; L.at(0, 0, 3.2, Math.PI);
-  if (lt < 3.2) { camKeys(lt, [[0, [0, 4.0, 3.0], [0, 4.6, -7.5], 52], [1.0, [0, 4.8, 2.0], [0, 5.2, -7.5], 46], [3.2, [0, 5.0, 0.5], [0, 5.2, -7.5], 40]]); L.setFace('surprised'); }
+  if (lt < 2.5) { camKeys(lt, [[0, [0, 3.4, 3.4], [0, 3.8, -7.5], 52], [1.2, [0, 4.8, 2.0], [0, 5.2, -7.5], 46], [2.5, [0, 5.0, 0.8], [0, 5.2, -7.5], 40]]); L.setFace('surprised'); }
   else {
     L.setFace('scared'); L.headG.rotation.x = -0.2; L.armL.rotation.x = L.armR.rotation.x = -0.6; L.armL.rotation.z = -0.3; L.armR.rotation.z = 0.3;
-    camKeys(lt, [[3.2, [0.3, 2.3, 0.4], [0, 2.1, 3.2], 52], [5, [0.25, 2.25, 0.9], [0, 2.1, 3.2], 48]]);
+    camKeys(lt, [[2.5, [0.3, 2.3, 0.4], [0, 2.1, 3.2], 52], [3.3, [0.25, 2.25, 0.7], [0, 2.1, 3.2], 50]]);
     fill.position.set(0, 5, 0); fill.intensity = 25 + 25 * (frac(t * 3) < 0.5 ? 1 : 0); fill.color.set('#ff3b3b');
   }
   I.lights[1].intensity = on ? 30 + 50 * (frac(t * 3) < 0.5 ? 1 : 0) : 30;
-  comic('420 € !', 300, 1620, lt - 1.1, { size: 130, color: '#ff2e4d', rot: -0.1, dur: 1.6 });
+  comic('RECORD !', 540, 1640, t - EV.bigScreen - 0.4, { size: 110, color: '#ff2e4d', rot: -0.06, dur: 1.4 });
 });
-// 4O — les billets tombent dans le coffre blindé
-shot(62, 67, (lt, t) => {
+// « Chaque amende remplissait son coffre. »
+shot(57.7, 59.5, (lt, t) => {
   setMode('interior'); bigShowsVane(false); bigHot(false); eqAnim(t); I.door.position.x = I.doorOpenX;
-  billsAt(t, 1.4 + lt * 0.3);
+  billsAt(t, 2.0);
   const [c1, c2, c3] = EV.safeCounter;
   if (t < c1) safeText('84 300 €', false); else if (t < c2) safeText('84 315 €', t - c1 < 0.15); else if (t < c3) safeText('84 720 €', t - c2 < 0.15); else safeText('1 000 000 €', frac(t * 4) < 0.5);
   I.wheel.rotation.z = t * 2;
-  const L = C.leo; L.at(0.8, 0, 2.6, Math.PI * 0.78); L.setFace(t > c3 ? 'surprised' : 'scared');
-  camKeys(lt, [[0, [-0.8, 3.6, 3.6], [4.4, 4.2, -3.2], 56], [5, [0.6, 3.6, 1.8], [4.4, 3.4, -3.2], 50]]);
-  comic('KA-CHING !', 540, 1620, t - c3, { size: 120, color: '#38d26b', dur: 1.2 });
-  sparkle(V3(4.4, 3.7, -2.1), t - c3, 140);
+  const L = C.leo; L.at(0.6, 0, 3.4, 1.9); L.setFace(t > c3 ? 'surprised' : 'scared');
+  camKeys(lt, [[0, [-0.8, 3.6, 5.6], [5.2, 4.0, 1.6], 56], [1.8, [0.2, 3.8, 5.2], [5.2, 4.4, 1.6], 52]]);
+  comic('KA-CHING !', 540, 1620, t - c3, { size: 120, color: '#38d26b', dur: 0.9 });
 });
-// 4P — la photo
-shot(67, 71, (lt, t) => {
-  setMode('interior'); bigShowsVane(false); bigHot(false); eqAnim(t); billsAt(t, 1); safeText('1 000 000 €', false); I.door.position.x = I.doorOpenX;
+// « J'ai pris une photo avec mon téléphone… »
+shot(59.5, 62.9, (lt, t) => {
+  room(t, { bills: 1, safe: '1 000 000 €' }); bigShowsVane(false); bigHot(false);
   const L = C.leo; L.at(-0.5, 0, 3.2, Math.PI);
   const raise = smooth(range(lt, 0, 0.5));
   L.armR.rotation.x = -1.75 * raise; L.armL.rotation.x = -1.55 * raise; L.armL.rotation.z = 0.35 * raise;
-  L.setFace(lt < 1.6 ? 'determined' : 'happy');
+  L.setFace(lt < 2.0 ? 'determined' : 'happy');
   L.root.updateMatrixWorld(true);
   I.phone.visible = true; I.phone.position.copy(L.armR.localToWorld(V3(-0.25, -0.95, 0.1)));
   I.phone.quaternion.copy(L.root.quaternion); I.phone.rotateY(Math.PI); I.phone.rotateX(-0.2);
   I.phoneScreen.material.emissiveIntensity = t > EV.photo ? 2.5 : 1.0;
-  if (lt < 2.2) camKeys(lt, [[0, [-2.3, 2.8, 6.2], [0, 4.6, -7.5], 54], [2.2, [-2.0, 2.7, 5.4], [0, 4.8, -7.5], 52]]);
-  else camKeys(lt, [[2.2, [-0.7, 2.3, 0.2], [-0.5, 2.1, 3.2], 52], [4, [-0.65, 2.25, 0.7], [-0.5, 2.1, 3.2], 48]]);
+  if (lt < 2.0) camKeys(lt, [[0, [-2.3, 2.8, 6.2], [0, 4.6, -7.5], 54], [2.0, [-2.0, 2.7, 5.4], [0, 4.8, -7.5], 52]]);
+  else camKeys(lt, [[2.0, [-0.7, 2.3, 0.2], [-0.5, 2.1, 3.2], 52], [3.4, [-0.65, 2.25, 0.7], [-0.5, 2.1, 3.2], 48]]);
   OV.flash = t > EV.photo ? 1 - range(t, EV.photo, EV.photo + 0.35) : 0;
   comic('CLIC !', 760, 520, t - EV.photo, { size: 110, color: '#ffffff', rot: 0.1, dur: 0.9 });
 });
-// 4Q — la porte blindée se referme
-shot(71, 75, (lt, t) => {
+// « Mais derrière moi, clac, la porte en fer s'est verrouillée. »
+shot(62.9, 65.8, (lt, t) => {
   setMode('interior'); bigShowsVane(false); bigHot(false); eqAnim(t); billsAt(t, 1); safeText('1 000 000 €', false);
-  const ts = EV.doorSlam - 71;
+  const ts = EV.doorSlam - 62.9 - 0.3;
   I.door.position.x = lt < ts ? I.doorOpenX : I.doorOpenX * (1 - easeIn(range(lt, ts, ts + 0.3)));
   const L = C.leo;
-  if (lt < ts + 0.2) { L.at(-0.5, 0, 3.2, Math.PI); L.setFace('happy'); }
-  else if (lt < ts + 0.6) { L.at(-0.5, 0, 3.2, Math.PI + Math.PI * smooth(range(lt, ts + 0.2, ts + 0.6))); L.setFace('surprised'); }
-  else if (lt < 2.4) { const u = range(lt, ts + 0.6, 2.4); L.at(-0.3, 0, lerp(3.2, 6.9, u), 0); L.walk(lt * 12, 0.8); L.setFace('scared'); }
-  else { L.at(-0.3, 0, 6.9, 0); L.setFace('scared'); const b = Math.abs(Math.sin(lt * 11)); L.armL.rotation.x = -1.6 - b * 0.6; L.armR.rotation.x = -1.6 - (1 - b) * 0.6; L.torso.rotation.x = 0.1; }
-  if (lt < 2.2) look([0.6, 2.8, -2.2], [0, 2.6, 8], 54);
-  else camKeys(lt, [[2.2, [3.0, 2.6, 4.2], [-0.3, 2.2, 7.2], 50], [4, [2.7, 2.5, 4.6], [-0.3, 2.2, 7.3], 46]]);
+  if (lt < ts + 0.4) { L.at(-0.5, 0, 3.2, Math.PI); L.setFace('happy'); }
+  else if (lt < ts + 0.8) { L.at(-0.5, 0, 3.2, Math.PI + Math.PI * smooth(range(lt, ts + 0.4, ts + 0.8))); L.setFace('surprised'); }
+  else { const u = range(lt, ts + 0.8, 2.9); L.at(-0.3, 0, lerp(3.2, 6.9, u), 0); L.walk(lt * 12, 0.8); L.setFace('scared'); }
+  look([0.6, 2.8, -2.2], [0, 2.6, 8], 54);
   if (lt > ts + 0.3 && lt < ts + 0.7) shake(0.12 * (1 - range(lt, ts + 0.3, ts + 0.7)), t);
-  comic('CLANG !', 540, 600, lt - ts - 0.3, { size: 170, color: '#adb5bd', rot: -0.1, dur: 1.2 });
-  bubble('Hé ! Ouvrez !', HEAD(L), lt - 2.6, 1.3, 56);
+  comic('CLAC !', 540, 600, lt - ts - 0.3, { size: 170, color: '#adb5bd', rot: -0.1, dur: 1.2 });
 });
-// 4R — M. Vane apparaît sur l'écran
-shot(75, 80, (lt, t) => {
+// « Sur l'écran, M. Vane souriait : « Personne ne quitte le phare avec les preuves. » »
+shot(65.8, 69.8, (lt, t) => {
   setMode('interior'); eqAnim(t, 0.5); billsAt(t, 1); safeText('1 000 000 €', false); I.door.position.x = 0;
   const glitch = t > EV.vaneOn && t < EV.vaneOn + 0.35;
   bigShowsVane(t > EV.vaneOn && !(glitch && frac(t * 20) < 0.5));
-  const V = C.vane; V.at(500, 0, -0.3, 0); V.setFace(lt < 2.4 ? 'smirk' : 'evil'); V.armR.rotation.x = -0.4; V.armL.rotation.x = -0.4; V.headG.rotation.z = Math.sin(lt * 0.8) * 0.05;
-  const L = C.leo; L.at(-0.6, 0, 1.2, Math.PI); L.setFace('scared');
-  camKeys(lt, [[0, [0.6, 3.2, 4.0], [0, 5.0, -7.5], 50], [2.5, [0.3, 4.6, 0.5], [0, 5.2, -7.5], 40], [5, [0.1, 5.0, -2.5], [0, 5.2, -7.5], 36]]);
-  // reflet des lunettes : projeté de la caméra du studio vers l'écran
+  const V = C.vane; V.at(500, 0, -0.3, 0); V.setFace(t < 67.8 ? 'smirk' : 'evil'); V.armR.rotation.x = -0.4; V.armL.rotation.x = -0.4; V.headG.rotation.z = Math.sin(lt * 0.8) * 0.05;
+  const L = C.leo; L.at(-0.6, 0, 6.6, Math.PI + 0.2); L.setFace('scared');
+  camKeys(lt, [[0, [0.6, 3.2, 4.0], [0, 5.0, -7.5], 50], [2.0, [0.3, 4.6, 0.5], [0, 5.2, -7.5], 40], [4.0, [0.1, 5.0, -2.5], [0, 5.2, -7.5], 36]]);
   V.root.updateMatrixWorld(true);
   const g = V.glasses.getWorldPosition(V3()).project(ST.cam);
   sparkle(V3(g.x * 3.3, 5.2 + g.y * 1.65, -7.45), t - EV.glassesGlint, 110);
-  sparkle(V3(g.x * 3.3, 5.2 + g.y * 1.65, -7.45), t - EV.glassesGlint - 1.8, 90);
-  tag('M. VANE', V3(0, 7.3, -7.4), t - EV.vaneOn - 0.4, 1.8, '#ffffff', '#5c677d');
+  sparkle(V3(g.x * 3.3, 5.2 + g.y * 1.65, -7.45), t - EV.glassesGlint - 1.7, 90);
+  tag('M. VANE', V3(0, 7.3, -7.4), t - EV.vaneOn - 0.4, 1.4, '#ffffff', '#5c677d');
   OV.vignette = 0.7;
 });
-// 4S — le phare vrombit
-shot(80, 83, (lt, t) => {
+// « Et soudain, le sol a vibré. »
+shot(69.8, 71.5, (lt, t) => {
   setMode('interior'); eqAnim(t, 1.5); billsAt(t, 2); safeText('1 000 000 €', frac(t * 6) < 0.5); I.door.position.x = 0;
   bigShowsVane(true);
   const V = C.vane; V.at(500, 0, -0.3, 0); V.setFace('evil'); V.armR.rotation.x = -0.4; V.armL.rotation.x = -0.4;
@@ -513,11 +572,11 @@ shot(80, 83, (lt, t) => {
   fill.position.set(0, 8, 0); fill.color.set('#ff2e4d'); fill.intensity = frac(t * 3) < 0.5 ? 60 : 5;
   const L = C.leo; L.at(-0.6 + Math.sin(lt * 5) * 0.3, 0, 2.5, Math.PI + 0.4); L.setFace('scared');
   L.armL.rotation.z = -1.3 + Math.sin(lt * 9) * 0.3; L.armR.rotation.z = 1.3 + Math.sin(lt * 8) * 0.3; L.root.rotation.z = Math.sin(lt * 6) * 0.15;
-  look([5.2, 4.4, 4.6], [-0.5, 3.0, -3], 58); shake(0.14, t);
-  comic('VRRROOOOM !', 540, 560, lt - 0.2, { size: 115, color: '#ff8c1a', rot: -0.08, dur: 2.2 });
+  look([2.0, 5.0, 6.6], [-0.5, 3.0, -3], 58); shake(0.14, t);
+  comic('VRRROOOOM !', 540, 560, lt - 0.1, { size: 115, color: '#ff8c1a', rot: -0.08, dur: 1.5 });
 });
-// 4T — le phare se détache et s'élève au-dessus de l'océan
-shot(83, DURATION, (lt, t) => {
+// « Le phare n'était pas ancré dans la roche : il s'élevait dans les airs… »
+shot(71.5, DURATION, (lt, t) => {
   setMode('night'); board(0, false);
   const u = easeIn(range(lt, 0.3, 4.6));
   const Lh = R.lighthouse; Lh.position.set(LH.x + u * 14, LH.y + u * 34 + Math.sin(t * 40) * 0.08 * (1 - u), LH.z + u * 10);
@@ -529,13 +588,13 @@ shot(83, DURATION, (lt, t) => {
   R.debris.forEach((d, k) => {
     const t0 = 0.2 + hash(k) * 2.5, age = lt - t0; if (age < 0) return;
     d.visible = true;
-    d.position.set(LH.x + (hash(k + 1) - 0.5) * 9 + u * 14 * 0.5, LH.y + (hash(k + 2) - 0.2) * 2 - 4.9 * age * age + 3 * age, LH.z + (hash(k + 3) - 0.5) * 9 + u * 6);
+    d.position.set(LH.x + (hash(k + 1) - 0.5) * 9 + u * 7, LH.y + (hash(k + 2) - 0.2) * 2 - 4.9 * age * age + 3 * age, LH.z + (hash(k + 3) - 0.5) * 9 + u * 6);
     d.rotation.set(age * 3 + k, age * 2, k);
     if (d.position.y < -1.5) d.visible = false;
   });
   const p = Lh.position;
   shadowAt(p.x, 10, p.z, 40, [-0.4, 1, 0.6]);
-  const w = easeOut(range(lt, 0, 4.6));
+  const w = easeOut(range(lt, 0, 5));
   look([p.x - lerp(26, 70, w), lerp(16, 22, w), p.z + lerp(34, 80, w)], [p.x, p.y + 10 - 6 * w, p.z], lerp(52, 46, w));
   fill.position.copy(p).add(V3(-8, 4, 10)); fill.intensity = 80; fill.color.set('#7df9ff'); fill.distance = 60;
   OV.vignette = 0.8;
@@ -545,8 +604,8 @@ shot(83, DURATION, (lt, t) => {
 });
 
 function transitions(t) {
-  for (const w of [20.0, 52.0]) { const a = t - w; if (a >= 0 && a < 0.25) OV.flash = Math.max(OV.flash, 0.7 * (1 - a / 0.25)); }
-  const b = 40.0 - t; if (b > 0 && b < 0.35) OV.fade = Math.max(OV.fade, 1 - b / 0.35);
+  const a = t - 47.1; if (a >= 0 && a < 0.25) OV.flash = Math.max(OV.flash, 0.7 * (1 - a / 0.25));
+  const b = EV.night - t; if (b > 0 && b < 0.35) OV.fade = Math.max(OV.fade, 1 - b / 0.35);
 }
 
 // ---------------- rendu d'une image ----------------

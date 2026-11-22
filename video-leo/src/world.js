@@ -17,6 +17,7 @@ export function makeCast() {
   C.p3 = new Character({ skin: '#f1c27d', shirt: '#80b918', pants: '#5e548e', hair: '#222', scale: 1.02 });
   C.p4 = new Character({ skin: '#ffe0bd', shirt: '#ff006e', pants: '#3a86ff', hat: 'beanie', hatColor: '#ffbe0b', bandColor: '#fb5607', pompom: '#fff', scale: 0.98 });
   // habitants en chaussons épais
+  C.boul = new Character({ skin: '#ffd2a8', shirt: '#ff9f1c', pants: '#6d3b1f', hat: 'chef', apron: '#ffffff', hair: '#b5652b' });
   C.s1 = new Character({ skin: '#ffd2a8', shirt: '#f77f00', pants: '#003049', hair: '#9c6644', slippers: '#ffc8dd' });
   C.s2 = new Character({ skin: '#a0673d', shirt: '#4361ee', pants: '#2b2d42', hat: 'beanie', hatColor: '#e63946', bandColor: '#9d0208', pompom: '#fff', slippers: '#caffbf', scale: 0.96 });
   return C;
@@ -116,6 +117,8 @@ export function makeTown(scene) {
   for (let z = -16; z <= -3; z += 7) house(16, z, -Math.PI / 2);      // rangée est (face -x)
   for (let x = -46; x <= -34; x += 7) house(x, 6, Math.PI / 2, { h: 6 });
   for (let x = -60; x < -40; x += 7.5) house(x, -24, 0);
+  const bk = signTex('BOULANGERIE', { bg: '#7b3f00', fg: '#ffe8b0', border: '#ffd23f', size: 62, w: 512, h: 120 });
+  plane(W, 5, 1.2, new THREE.MeshStandardMaterial({ map: bk }), -8, 4.3, -20.85);
   // panneau géant sur la place
   R.boardTex = canvasTex(1024, 512, (ctx, w, h) => drawBoard(ctx, w, h, {}));
   const bd = new THREE.Group(); bd.position.set(0, 0, -11); W.add(bd); R.board = bd;
@@ -226,7 +229,7 @@ function makeBike() {
 }
 
 // ---------------- Salle de contrôle (dans le phare) ----------------
-export const FEES = [['ÉTERNUEMENT', '15 €'], ['PAS LOURD', '15 €'], ['BIP DE VÉLO', '15 €'], ['CHUCHOTEMENT', '15 €']];
+export const FEES = [['ÉTERNUEMENT', '15 €'], ['PAS LOURD', '15 €'], ['MILA', '90 €'], ['PÊCHEUR', '240 €']];
 export function drawFee(ctx, w, h, name, price, hot) {
   ctx.fillStyle = '#06121f'; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = 'rgba(80,200,255,.07)'; for (let y = 0; y < h; y += 6) ctx.fillRect(0, y, w, 2);
@@ -306,11 +309,11 @@ export function makeControlRoom(scene, vaneTarget) {
   const sgp = plane(con, 3.6, 0.62, new THREE.MeshBasicMaterial({ map: sg }), 0, 3.45, -0.83);
   // tuyau à billets -> coffre blindé
   const tubeM = new THREE.MeshPhysicalMaterial({ color: '#cfefff', transparent: true, opacity: 0.25, roughness: 0.05, metalness: 0, side: THREE.DoubleSide });
-  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 6, 16, 1, true), tubeM); tube.position.set(4.4, 6.0, -3.2); G.add(tube);
-  const ring = (y) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.08, 6, 20), mat('#adb5bd', { metalness: 0.8 })); r.rotation.x = Math.PI / 2; r.position.set(4.4, y, -3.2); G.add(r); };
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 6, 16, 1, true), tubeM); tube.position.set(5.2, 6.0, 1.6); G.add(tube);
+  const ring = (y) => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.08, 6, 20), mat('#adb5bd', { metalness: 0.8 })); r.rotation.x = Math.PI / 2; r.position.set(5.2, y, 1.6); G.add(r); };
   ring(3.1); ring(6); ring(8.9);
-  I.tubeTop = V3(4.4, 8.9, -3.2); I.tubeBottom = V3(4.4, 3.0, -3.2);
-  const safe = new THREE.Group(); safe.position.set(4.4, 0, -3.2); G.add(safe);
+  I.tubeTop = V3(5.2, 8.9, 1.6); I.tubeBottom = V3(5.2, 3.0, 1.6);
+  const safe = new THREE.Group(); safe.position.set(5.2, 0, 1.6); safe.rotation.y = -1.87; G.add(safe);
   box(safe, 3.0, 3.0, 2.6, '#6c757d', 0, 1.5, 0); box(safe, 3.1, 0.3, 2.7, '#495057', 0, 3.0, 0);
   const sd = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.2, 20), mat('#adb5bd', { metalness: 0.85, roughness: 0.25 })); sd.rotation.z = Math.PI / 2; sd.rotation.y = Math.PI / 2; sd.position.set(-1.0, 1.5, 0.6); sd.rotation.set(Math.PI / 2, 0, 0); sd.position.set(0, 1.5, 1.35); safe.add(sd);
   I.wheel = new THREE.Group(); I.wheel.position.set(0, 1.5, 1.5); safe.add(I.wheel);
