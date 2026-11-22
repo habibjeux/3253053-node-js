@@ -22,7 +22,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(p).pipe(res);
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const URL_ = `http://127.0.0.1:${server.address().port}/index.html?s=${arg('--scale', '1')}`;
+const URL_ = `http://127.0.0.1:${server.address().port}/index.html?s=${arg('--scale', '1')}&cfg=${arg('--cfg', 'v3')}`;
 
 async function openPage(browser) {
   const page = await browser.newPage();

@@ -1,6 +1,6 @@
 // Montage vertical 9:16 à partir des images extraites (frames/<clip>/%05d.jpg, 50 i/s) :
 // recadrages, ralentis, arrêts sur image annotés façon analyse télé, sous-titres « karaoké ».
-import { LINES, WIDTH, HEIGHT, DURATION, OLD_STARTS, NEW_STARTS } from './timeline.js';
+import { LINES, WIDTH, HEIGHT, DURATION } from './timeline.js';
 
 await Promise.all([document.fonts.load('80px "Luckiest Guy"'), document.fonts.load('900 80px "Montserrat"'), document.fonts.load('italic 900 80px "Montserrat"')]);
 const SCALE = Number(new URLSearchParams(location.search).get('s') || 1);
@@ -9,7 +9,7 @@ out.width = Math.round(WIDTH * SCALE); out.height = Math.round(HEIGHT * SCALE);
 const ctx = out.getContext('2d');
 const COMIC = '"Luckiest Guy", "DejaVu Sans", sans-serif';
 const SANS = '"Montserrat", "DejaVu Sans", sans-serif';
-const SRC_FPS = 50, SRC_N = { a: 688, b: 880, c: 900 };
+const SRC_FPS = { a: 50, b: 50, c: 50, v1: 30, v2: 30, v3: 30, v4: 30 }, SRC_N = { a: 688, b: 880, c: 900, v1: 308, v2: 456, v3: 432, v4: 293 };
 
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, u) => a + (b - a) * u;
@@ -17,64 +17,12 @@ const range = (t, a, b) => clamp((t - a) / (b - a));
 const smooth = (u) => { u = clamp(u); return u * u * (3 - 2 * u); };
 const easeOut = (u) => 1 - Math.pow(1 - clamp(u), 3);
 const easeOutBack = (u) => { u = clamp(u); const c = 1.9; return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
-// recalage des temps de la 1re version sur la nouvelle voix (interpolation par réplique)
-const R = (t) => { for (let i = 0; i < OLD_STARTS.length - 1; i++) if (t <= OLD_STARTS[i + 1]) return lerp(NEW_STARTS[i], NEW_STARTS[i + 1], range(t, OLD_STARTS[i], OLD_STARTS[i + 1])); return t; };
 
 const GOLD = '#f5c518', GRANA = '#a50044', BLAU = '#1e6fd9', CYAN = '#38e1ff', RED = '#ff3d5a', WHITE = '#ffffff';
 
-// ---------------- découpage ----------------
-const SEGS = [
-  { t0: 0.0, t1: 3.75, src: 'b', s0: 3.6, s1: 7.35, ar: 1.25, crop: [[1000, 540, 864], [1060, 540, 864]] },
-  { t0: 3.75, t1: 7.95, src: 'c', s0: 13.8, s1: 18.0, ar: 1.25, crop: [[760, 540, 864], [560, 540, 864]] },
-  { t0: 7.95, t1: 18.45, src: 'a', s0: 0.0, s1: 0.0, ar: 0.75, crop: [[960, 540, 1440], [1010, 440, 1300]] },
-  { t0: 18.45, t1: 21.55, src: 'a', s0: 0.0, s1: 1.5, ar: 0.75, crop: [[1010, 440, 1300], [760, 420, 1200]] },
-  { t0: 21.55, t1: 25.5, src: 'a', s0: 1.5, s1: 5.6, ar: 0.75, crop: [[720, 440, 1440], [960, 440, 1440]] },
-  { t0: 25.5, t1: 27.95, src: 'a', s0: 10.0, s1: 11.6, ar: 1.0, crop: [[900, 540, 1080], [940, 540, 1080]] },
-  { t0: 27.95, t1: 32.85, src: 'a', s0: 11.6, s1: 13.7, ar: 0.75, crop: [[960, 540, 1440], [960, 540, 1440]] },
-  { t0: 32.85, t1: 44.5, src: 'a', s0: 7.0, s1: 7.0, ar: 0.75, crop: [[800, 470, 1440], [780, 480, 1260]] },
-  { t0: 44.5, t1: 47.0, src: 'a', s0: 7.0, s1: 8.4, ar: 0.75, crop: [[780, 480, 1260], [760, 480, 1300]] },
-  { t0: 47.0, t1: 48.95, src: 'b', s0: 0.0, s1: 0.9, ar: 1.25, crop: [[700, 540, 864], [760, 540, 864]] },
-  { t0: 48.95, t1: 54.25, src: 'b', s0: 0.9, s1: 3.0, ar: 0.75, crop: [[960, 540, 1440], [1040, 540, 1300]] },
-  { t0: 54.25, t1: 55.45, src: 'b', s0: 4.6, s1: 5.8, ar: 1.25, crop: [[1050, 540, 864], [1050, 540, 760]] },
-  { t0: 55.45, t1: 59.9, src: 'b', s0: 12.0, s1: 16.4, ar: 1.778, crop: [[1350, 540, 608], [1250, 540, 608]] },
-  { t0: 59.9, t1: 63.0, src: 'c', s0: 9.6, s1: 12.7, ar: 1.778, crop: [[900, 540, 608], [930, 540, 560]] },
-].map((s) => ({ ...s, t0: R(s.t0), t1: s.t1 >= 63 ? DURATION : R(s.t1) }));
-
-// annotations (coordonnées dans l'image source 1920×1080 ; temps de la 1re version, recalés par R)
-const ANN = [
-  // ① arrêt sur image : Raphinha et ses deux options
-  { seg: 2, t: 9.27, type: 'focus', p: [1540, 440], r: 150, until: 12.5 },
-  { seg: 2, t: 9.27, type: 'spot', p: [1540, 435], r: 62, color: GOLD, name: 'RAPHINHA', sub: 'RÉCUPÈRE' },
-  { seg: 2, t: 11.41, type: 'banner', text: '2 POSSIBILITÉS', color: GOLD },
-  { seg: 2, t: 12.63, type: 'pass', p: [1500, 405], q: [545, 292], curve: -0.14, color: GOLD, badge: '1', label: 'LANCER YAMAL' },
-  { seg: 2, t: 13.0, type: 'spot', p: [495, 292], r: 52, color: GOLD, name: 'YAMAL', sub: '1 CONTRE 1', side: 'below' },
-  { seg: 2, t: 15.17, type: 'zone', p: [960, 625], r: [250, 105], color: CYAN, label: "L'ESPACE" },
-  { seg: 2, t: 15.17, type: 'run', p: [1510, 450], q: [1060, 600], curve: 0.1, color: CYAN, badge: '2' },
-  // la passe en glissant
-  { seg: 3, t: 18.5, type: 'spot', p: [1540, 435], r: 62, color: GOLD, name: 'RAPHINHA', until: 19.7 },
-  { seg: 3, t: 20.4, type: 'pop', text: 'MÊME EN GLISSANT !', color: GOLD },
-  { seg: 4, t: 21.7, type: 'banner', text: 'LAMINE YAMAL', color: GOLD },
-  // Yamal face au défenseur
-  { seg: 5, t: 25.9, type: 'track', keys: [[10.0, 1080, 700], [10.5, 1180, 700], [11.0, 1300, 690], [11.6, 1330, 700]], r: 120, color: RED, name: 'IL RECULE !' },
-  { seg: 6, t: 28.2, type: 'banner', text: '+ 2 DÉFENSEURS', color: RED },
-  { seg: 6, t: 30.8, type: 'pop', text: 'INARRÊTABLE', color: GOLD },
-  // ② arrêt sur image : les solutions de Yamal
-  { seg: 7, t: 32.95, type: 'spot', p: [1218, 350], r: 52, color: GOLD, name: 'YAMAL' },
-  { seg: 7, t: 33.9, type: 'banner', text: '2 SOLUTIONS', color: GOLD },
-  { seg: 7, t: 35.3, type: 'pass', p: [1190, 360], q: [500, 600], curve: 0.2, color: WHITE, badge: '1', label: 'CENTRER' },
-  { seg: 7, t: 37.3, type: 'run', p: [1185, 385], q: [330, 490], curve: -0.22, color: RED, badge: '2', label: 'DRIBBLER' },
-  { seg: 7, t: 39.85, type: 'focus', p: [864, 690], r: 170 },
-  { seg: 7, t: 39.85, type: 'spot', p: [864, 698], r: 52, color: CYAN, name: 'FERMÍN', sub: 'SEUL !', side: 'below' },
-  { seg: 7, t: 41.9, type: 'run', p: [850, 712], q: [570, 800], curve: 0.05, color: CYAN, label: "L'APPEL", loop: true },
-  // la passe
-  { seg: 8, t: 44.55, type: 'pass', p: [1225, 365], q: [600, 770], curve: 0.06, color: CYAN, dur: 0.8, ball: true },
-  { seg: 8, t: 45.1, type: 'pop', text: 'PASSE CHIRURGICALE', color: CYAN },
-  { seg: 9, t: 47.1, type: 'banner', text: 'FERMÍN', color: CYAN },
-  { seg: 10, t: 51.6, type: 'pop', text: 'PETIT FILET !', color: GOLD },
-  { seg: 11, t: 54.26, type: 'goal' },
-  { seg: 12, t: 55.5, type: 'banner', text: 'TOUJOURS UNE SOLUTION', color: GOLD },
-].map((a) => ({ ...a, t: R(a.t), until: a.until && R(a.until) }));
-
+// ---------------- découpage (selon ?cfg=) ----------------
+const CFG = new URLSearchParams(location.search).get('cfg') || 'v3';
+const { SEGS, ANN, EXTRA } = await import(`./cfg_${CFG}.js`);
 // ---------------- images ----------------
 const cache = new Map();
 function img(src, n) {
@@ -225,9 +173,28 @@ function drawAnn(an, t) {
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]);
     if (an.label) { ctx.font = `italic 900 40px ${SANS}`; const w = ctx.measureText(an.label).width + 40; ctx.fillStyle = an.color; ctx.beginPath(); ctx.roundRect(x - w / 2, y - 30, w, 60, 30); ctx.fill(); txt(an.label, x, y + 2, 40, '#0b0d18', { italic: true }); }
   }
+  if (an.type === 'tag') { // étiquette posée sur une annotation existante
+    const [x, y] = S(an.p); ctx.font = `italic 900 44px ${SANS}`; const w = ctx.measureText(an.text).width + 48 + (an.badge ? 60 : 0);
+    const cx = clamp(x, w / 2 + 14, WIDTH - w / 2 - 14);
+    ctx.translate(cx, y); ctx.scale(s, s);
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 14;
+    ctx.fillStyle = 'rgba(8,10,20,.9)'; ctx.beginPath(); ctx.roundRect(-w / 2, -34, w, 68, 34); ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.lineWidth = 4; ctx.strokeStyle = an.color; ctx.stroke();
+    if (an.badge) { ctx.fillStyle = an.color; ctx.beginPath(); ctx.arc(-w / 2 + 34, 0, 26, 0, 7); ctx.fill(); txt(an.badge, -w / 2 + 34, 2, 32, '#0b0d18'); }
+    txt(an.text, an.badge ? 30 : 0, 2, 44, an.color, { italic: true });
+  }
+  if (an.type === 'plate') { // étiquette TV reliée à un joueur déjà entouré
+    const [x, y] = S(an.p); const py = y - 190 > 220 ? y - 190 : y + 190;
+    ctx.save(); ctx.strokeStyle = an.color; ctx.lineWidth = 4; ctx.globalAlpha = clamp(s);
+    ctx.beginPath(); ctx.moveTo(x, py < y ? y - 70 : y + 70); ctx.lineTo(x, py < y ? py + 52 : py - 52); ctx.stroke();
+    ctx.fillStyle = an.color; ctx.beginPath(); ctx.arc(x, py < y ? y - 70 : y + 70, 7, 0, 7); ctx.fill(); ctx.restore();
+    plate(an.name, an.sub, x, py, an.color, s);
+  }
   if (an.type === 'pass') drawPass(an, age, t);
   if (an.type === 'run') drawRun(an, age, t);
   if (an.type === 'banner') {
+    const life = an.life || 2.8; if (age > life) { ctx.restore(); return; }
+    ctx.globalAlpha = 1 - range(age, life - 0.3, life);
     const y = cur.dy > 260 ? cur.dy - 78 : 250; const w = 0;
     ctx.translate(WIDTH / 2, y); ctx.scale(s, s);
     ctx.font = `italic 900 58px ${SANS}`; const bw = ctx.measureText(an.text).width + 110;
@@ -244,6 +211,8 @@ function drawAnn(an, t) {
     txt(an.text, 0, 0, 92, an.color, { font: COMIC, weight: 400, stroke: '#000', lw: 18 });
   }
   if (an.type === 'goal') {
+    if (age > 2.2) { ctx.restore(); return; }
+    ctx.globalAlpha = 1 - range(age, 1.8, 2.2);
     ctx.fillStyle = `rgba(255,255,255,${0.75 * (1 - range(age, 0, 0.3))})`; ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.translate(WIDTH / 2, 760); ctx.rotate(-0.08); const k = easeOutBack(range(age, 0, 0.25)) * (1 + age * 0.08); ctx.scale(k, k);
     txt('BUUUUT !', 0, 0, 190, GOLD, { font: COMIC, weight: 400, stroke: GRANA, lw: 34 });
@@ -306,14 +275,17 @@ async function renderFrame(t) {
   const seg = SEGS[si];
   const u = range(t, seg.t0, seg.t1);
   const st = lerp(seg.s0, seg.s1, u);
-  const n = clamp(Math.round(st * SRC_FPS) + 1, 1, SRC_N[seg.src]);
+  const n = clamp(Math.round(st * SRC_FPS[seg.src]) + 1, 1, SRC_N[seg.src]);
   const im = await img(seg.src, n);
   const e = smooth(u);
-  const [cx, cy, cw] = seg.crop[0].map((v, k) => lerp(v, seg.crop[1][k], e));
+  const [cx, cy, cw] = seg.full ? [540, 960, 1080] : seg.crop[0].map((v, k) => lerp(v, seg.crop[1][k], e));
+  if (seg.full) seg.ar = 16 / 9;
   const chh = cw * seg.ar, k = WIDTH / cw, dh = chh * k;
   const dy = seg.ar > 1.7 ? 0 : Math.round(860 - dh / 2);
-  cur = { x: clamp(cx - cw / 2, 0, 1920 - cw), y: clamp(cy - chh / 2, 0, 1080 - chh), k, dy, dh, st };
-  const frozen = seg.s0 === seg.s1;
+  const chhFull = seg.full ? 1920 : chh;
+  const SW = seg.full ? 1080 : 1920, SH = seg.full ? 1920 : 1080;
+  cur = { x: clamp(cx - cw / 2, 0, SW - cw), y: clamp(cy - chh / 2, 0, SH - chh), k, dy, dh, st };
+  const frozen = seg.s0 === seg.s1 && !seg.hold;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   ctx.fillStyle = '#05060c'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
   if (seg.ar < 1.7) { ctx.save(); ctx.filter = 'blur(30px) brightness(0.4) saturate(1.2)'; const bw = HEIGHT * 16 / 9; ctx.drawImage(im, (WIDTH - bw) / 2, 0, bw, HEIGHT); ctx.restore(); }
@@ -328,8 +300,8 @@ async function renderFrame(t) {
   const g = ctx.createRadialGradient(WIDTH / 2, HEIGHT / 2, HEIGHT * 0.3, WIDTH / 2, HEIGHT / 2, HEIGHT * 0.75);
   g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)'); ctx.fillStyle = g; ctx.fillRect(0, 0, WIDTH, HEIGHT);
   for (const an of ANN) if (an.seg === si) drawAnn(an, t);
-  if (si === 1) drawAnn({ type: 'banner', text: 'MI-TEMPS : 0 - 2', color: RED, t: SEGS[1].t0 + 0.15 }, t);
-  for (const s of SEGS) { const a = t - s.t0; if (s.t0 > 0 && a >= 0 && a < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.3 * (1 - a / 0.12)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); } }
+  if (si === EXTRA.halftime) drawAnn({ type: 'banner', life: 9, text: 'MI-TEMPS : 0 - 2', color: RED, t: SEGS[EXTRA.halftime].t0 + 0.15 }, t);
+  for (const s of SEGS) { const a = t - s.t0; if (s.t0 > 0 && !s.hold && a >= 0 && a < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.3 * (1 - a / 0.12)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); } }
   drawSubtitles(t, seg.ar > 1.7 ? 1480 : clamp(dy + dh + 150, 1380, 1560));
   const f = range(t, DURATION - 0.8, DURATION - 0.05); if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
   if (t < 0.25) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.25})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
