@@ -1,0 +1,17 @@
+{
+  "name": "barca-analyse-video",
+  "version": "1.0.0",
+  "description": "Vidéo verticale 9:16 Montage vertical analyse du but de Fermín (Barça – Villarreal)",
+  "scripts": {
+    "preview": "node render.mjs --preview",
+    "render": "node render.mjs",
+    "audio": "node audio.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/luckiest-guy": "^5.1.0",
+    "three": "^0.170.0"
+  },
+  "type": "module"
+}
