@@ -81,7 +81,7 @@ function drawSubtitles(t) {
   const widths = words.map((w) => ctx.measureText(w).width);
   const rows = [[]]; let rw = 0;
   words.forEach((w, i) => { if (rw + widths[i] > WIDTH - 140 && rows[rows.length - 1].length) { rows.push([]); rw = 0; } rows[rows.length - 1].push(i); rw += widths[i] + space; });
-  const pop = easeOutBack(range(t, ch.t0, ch.t0 + 0.16)); const cy = 1290;
+  const pop = easeOutBack(range(t, ch.t0, ch.t0 + 0.16)); const cy = 1620;
   ctx.save(); ctx.translate(WIDTH / 2, cy); ctx.scale(0.8 + 0.2 * pop, 0.8 + 0.2 * pop); ctx.translate(-WIDTH / 2, -cy);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   rows.forEach((row, ri) => {
@@ -92,7 +92,7 @@ function drawSubtitles(t) {
       ctx.save();
       if (active) { ctx.translate(x + widths[i] / 2, y); ctx.scale(1.08, 1.08); ctx.translate(-(x + widths[i] / 2), -y); }
       ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowOffsetY = 8;
-      outlined(words[i], x, y, size, active ? '#ffd23f' : '#ffffff', '#141218', 17);
+      outlined(words[i], x, y, size, active ? '#ff4040' : '#ffffff', '#000000', 17);
       ctx.restore(); x += widths[i] + space;
     }
   });
@@ -189,9 +189,9 @@ function drawExtras(t) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const s1 = easeOutBack(range(a, 0, 0.3));
     ctx.save(); ctx.translate(WIDTH / 2, 330); ctx.scale(s1, s1); outlined('UNE SEULE BAGUE.', 0, 0, 92, '#e3e7ec', '#000', 16); ctx.restore();
-    const s2 = easeOutBack(range(a, 1.2, 1.5));
+    const s2 = easeOutBack(range(a, 1.3, 1.6));
     ctx.save(); ctx.translate(WIDTH / 2, 470); ctx.scale(s2, s2); outlined('LEQUEL EST LE VRAI OWEN ?', 0, 0, 74, '#ff3b3b', '#000', 14); ctx.restore();
-    for (const [lab, p, d] of [['LE LIT ?', { x: 330, y: 1560 }, 2.2], ['LA FENÊTRE ?', { x: 760, y: 820 }, 2.6]]) {
+    for (const [lab, p, d] of [['LE LIT ?', { x: 330, y: 1380 }, 2.95], ['LA FENÊTRE ?', { x: 760, y: 820 }, 3.85]]) {
       const s = easeOutBack(range(a, d, d + 0.3)); if (s <= 0) continue;
       ctx.save(); ctx.translate(p.x, p.y); ctx.scale(s, s);
       ctx.font = `64px ${FONT}`; const w = ctx.measureText(lab).width + 60;
@@ -280,6 +280,7 @@ function bedPose(t, { look = 0, phone = true, owenFace = 'sleep', creep = 0 } = 
   O.armL.rotation.z = -0.15 - creep * 1.1; O.armL.rotation.x = -0.1 - creep * 0.6;
   O.armR.rotation.z = 0.15; O.armL.rotation.y = 0;
   M.headG.rotation.y = look;
+  R.lumps[1].position.y = 1.62 + Math.sin(t * 1.9) * 0.05;
   O.torso.rotation.y = Math.sin(t * 0.8) * 0.0;
   if (phone) {
     M.armR.rotation.set(-1.45, 0, -0.35); M.armL.rotation.set(-1.4, 0, 0.35);
@@ -292,7 +293,7 @@ function bedPose(t, { look = 0, phone = true, owenFace = 'sleep', creep = 0 } = 
 function doPhoto() {
   if (photoReady) return;
   for (const c of Object.values(C)) c.reset();
-  bedPose(0, { phone: true });
+  bedPose(0, { phone: true }); R.phoneLight.intensity = 18; R.phoneLight.distance = 8;
   const pc = new THREE.PerspectiveCamera(42, 512 / 384, 0.1, 200);
   pc.position.set(10.5, 2.6, -1.8); pc.lookAt(0.2, 1.6, -3.6);
   updateRain(R, 3, V3(10, 0, -3));
@@ -302,7 +303,7 @@ function doPhoto() {
   const pctx = photoCanvas.getContext('2d'); const img = pctx.createImageData(512, 384);
   for (let y = 0; y < 384; y++) for (let x = 0; x < 512; x++) {
     const s = ((383 - y) * 512 + x) * 4, d = (y * 512 + x) * 4; const n = (hash(x * 13 + y * 7) - 0.5) * 30;
-    for (let k = 0; k < 3; k++) img.data[d + k] = Math.min(255, Math.max(0, Math.pow(px[s + k] / 255, 1 / 2.2) * 255 * 1.4 + n));
+    for (let k = 0; k < 3; k++) img.data[d + k] = Math.min(255, Math.max(0, Math.pow(px[s + k] / 255, 1 / 2.2) * 255 * 1.9 + n));
     img.data[d + 3] = 255;
   }
   pctx.putImageData(img, 0, 0);
@@ -323,62 +324,75 @@ function phoneShot(lt, t, keys) {
 }
 const PH_WIDE = [P300(0, 0, 8.4), P300(0, 0, 0), 46];
 
-shot(0, 2.6, (lt, t) => { bedPose(t); camKeys(lt, [[0, [-2.9, 2.0, -2.0], [-3.4, 1.55, -4.95], 36], [2.6, [-3.0, 1.9, -2.6], [-3.4, 1.55, -4.95], 32]]); OV.fade = 1 - range(lt, 0, 0.6); });
-shot(2.6, 6.3, (lt, t) => { bedPose(t); camKeys(lt, [[0, [3.4, 4.6, 3.2], [0, 1.4, -3.6], 50], [3.7, [2.6, 4.0, 1.6], [0, 1.5, -3.8], 48]]);
-  comic('z z z', 760, 760, lt - 0.5, { size: 70, color: '#cfd8ff', rot: 0.1, dur: 3.0, burst: false }); });
-shot(6.3, 10.2, (lt, t) => phoneShot(lt, t, [[0, ...PH_WIDE], [1.2, P300(0, -1.4, 6.6), P300(0, -1.4, 0), 44], [3.9, P300(0, -1.6, 6.0), P300(0, -1.6, 0), 44]]));
-shot(10.2, 12.6, (lt, t) => phoneShot(lt, t, [[0, P300(0, 0.2, 8.6), P300(0, 0.2, 0), 46], [2.4, P300(0, -0.2, 7.6), P300(0, -0.2, 0), 46]]));
-shot(12.6, 14, (lt, t) => { bedPose(t, { look: 0.9 * smooth(range(lt, 0.2, 0.9)), phone: false }); C.moi.setFace('scared'); R.phoneLight.position.set(-0.5, 2.6, -3.6); R.phoneLight.intensity = 5; look([0, 5.2, -3.5], [0, 1.6, -4.8], 40); });
-shot(14, 18.3, (lt, t) => { bedPose(t); R.curtains[0].position.z = -4.9; camKeys(lt, [[0, [12.5, 2.4, 1.5], [5.3, 2.9, -3], 46], [4.3, [9.2, 2.8, -1.0], [5.3, 3.0, -3], 44]]); });
-shot(18.3, 22.3, (lt, t) => {
-  if (lt < 2.5) phoneShot(lt, t, [[0, ...PH_WIDE], [2.5, P300(0, -0.6, 7.8), P300(0, -0.6, 0), 46]]);
-  else { bedPose(t); C.moi.setFace('scared'); C.moi.armR.rotation.set(0, 0, -0.9); C.moi.armL.rotation.set(0, 0, 0.9); miniPhone.visible = false; camKeys(lt, [[2.5, [-1.05, 4.2, -3.7], [-1.05, 1.6, -4.8], 40], [4, [-1.05, 3.7, -4.0], [-1.05, 1.6, -4.8], 36]]); }
-});
-shot(22.3, 26.2, (lt, t) => phoneShot(lt, t, [[0, ...PH_WIDE], [1.0, P300(0, -0.3, 8.6), P300(0, -0.3, 0), 46], [3.9, P300(0, -0.6, 6.0), P300(0, -0.6, 0), 46]]));
-shot(26.2, 32, (lt, t) => phoneShot(lt, t, [[0, ...PH_WIDE], [5.8, P300(0, -0.9, 7.4), P300(0, -0.9, 0), 46]]));
-shot(32, 36, (lt, t) => {
+const CLOCK_CAM = [[-2.9, 2.0, -2.0], [-3.4, 1.55, -4.95], 36];
+// « Imagine que ton petit ami t'envoie un texto à 3h17… »
+shot(0, 2.5, (lt, t) => { bedPose(t); camKeys(lt, [[0, ...CLOCK_CAM], [2.5, [-3.0, 1.9, -2.6], [-3.4, 1.55, -4.95], 32]]); OV.fade = 1 - range(lt, 0, 0.6); });
+// « …alors qu'il dort juste à côté de toi. »
+shot(2.5, 5.2, (lt, t) => { bedPose(t); camKeys(lt, [[0, [3.4, 4.6, 3.2], [0, 1.4, -3.6], 50], [2.7, [2.6, 4.0, 1.6], [0, 1.5, -3.8], 48]]);
+  comic('z z z', 760, 760, lt - 0.4, { size: 70, color: '#cfd8ff', rot: 0.1, dur: 2.3, burst: false }); });
+// « Tu dors ? Ne te retourne pas. »
+shot(5.2, 7.1, (lt, t) => phoneShot(lt, t, [[0, P300(-0.3, -1.4, 6.8), P300(-0.3, -1.4, 0), 44], [1.9, P300(-0.3, -1.6, 6.4), P300(-0.3, -1.6, 0), 44]]));
+// « Tu vérifies sa localisation… »
+shot(7.1, 9.9, (lt, t) => phoneShot(lt, t, [[0, P300(-0.3, -1.0, 7.4), P300(-0.3, -1.0, 0), 44], [2.8, P300(-0.3, -1.0, 6.4), P300(-0.3, -1.0, 0), 44]]));
+// « …puis il t'envoie une photo. »
+shot(9.9, 11.6, (lt, t) => phoneShot(lt, t, [[0, P300(-0.3, -0.8, 7.0), P300(-0.3, -0.8, 0), 44], [1.7, P300(-0.3, -1.0, 6.4), P300(-0.3, -1.0, 0), 44]]));
+// « Ta fenêtre vue de la rue… » puis « Toi, dans ton lit… quelqu'un sous la couverture. »
+shot(11.6, 17.4, (lt, t) => { bedPose(t); camKeys(lt, [[0, [13.5, 2.4, 2.0], [5.3, 2.9, -3], 44], [3.0, [10.5, 2.7, -1.0], [5.3, 3.0, -3], 40], [5.8, [7.4, 2.9, -2.4], [0.5, 1.6, -3.6], 38]]); });
+shot(17.4, 19.6, (lt, t) => { bedPose(t); R.phoneLight.position.set(1.6, 3.0, -3.8); camKeys(lt, [[0, [2.4, 4.8, -1.6], [1.1, 1.5, -3.2], 44], [2.2, [1.8, 4.2, -2.2], [1.1, 1.5, -3.4], 40]]); });
+// messages : « J'arrivais pas à dormir… Il est à ma place. »
+shot(19.6, 25.3, (lt, t) => phoneShot(lt, t, [[0, P300(-0.3, -1.0, 7.6), P300(-0.3, -1.0, 0), 44], [5.7, P300(-0.3, -1.6, 6.4), P300(-0.3, -1.6, 0), 44]]));
+// 3:18 — « À côté de toi, il respire encore. Lentement… »
+shot(25.3, 30.0, (lt, t) => {
   bedPose(t);
-  if (lt < 1.4) look([-3.4, 1.62, -3.8], [-3.4, 1.55, -4.95], 30);
-  else { R.phoneLight.position.set(1.6, 3.0, -3.8); R.phoneLight.intensity = 5; camKeys(lt, [[1.4, [1.8, 4.6, -2.6], [1.1, 1.6, -4.6], 44], [4, [1.1, 3.8, -3.8], [1.1, 1.6, -4.8], 38]]); }
+  if (lt < 1.1) look([-3.0, 1.9, -2.6], [-3.4, 1.55, -4.95], 32);
+  else { R.phoneLight.position.set(1.6, 3.0, -3.8); R.phoneLight.intensity = 5; camKeys(lt, [[1.1, [1.8, 4.6, -2.6], [1.1, 1.6, -4.6], 44], [4.7, [1.1, 3.6, -3.9], [1.1, 1.6, -4.8], 36]]); }
 });
-shot(36, 42, (lt, t) => {
-  const J = CS.joined; J.children[1].rotation.z = 1.5 + Math.sin(t * 0.6) * 0.02;
-  camKeys(lt, [[0, P300(40.8, 1.4, 6.5), P300(40, 0.3, 0), 40], [6, P300(40.4, 0.9, 3.8), P300(40.3, 0.5, 0.2), 34]]);
+// « Celui qui est à côté de toi attrape ta main… Et à son doigt, la bague… »
+shot(30.0, 36.1, (lt, t) => {
+  const g = smooth(range(t, EV.grab, EV.grab + 0.7));
+  CS.owenHand.position.set(lerp(3.2, 0.7, g), lerp(-0.8, 0.1, g), 0.35); CS.owenHand.rotation.z = 1.5 + Math.sin(t * 0.6) * 0.02;
+  camKeys(lt, [[0, P300(40.8, 1.4, 7.2), P300(40.3, 0.3, 0), 40], [2.6, P300(40.6, 1.1, 5.4), P300(40.3, 0.4, 0.1), 36], [6.1, P300(40.5, 0.9, 3.6), P300(40.55, 0.6, 0.2), 30]]);
   CS.ring.updateMatrixWorld(true);
   sparkle(CS.ring.getWorldPosition(V3()).add(V3(0, 0, 0.3)), t - EV.ringGlint, 120);
-  sparkle(CS.ring.getWorldPosition(V3()).add(V3(0, 0, 0.3)), t - EV.ringGlint - 2.0, 90);
+  sparkle(CS.ring.getWorldPosition(V3()).add(V3(0, 0, 0.3)), t - EV.ringGlint - 1.8, 90);
 });
-shot(42, 46.3, (lt, t) => {
-  if (lt < 1.2) { bedPose(t); look([-3.4, 1.62, -3.8], [-3.4, 1.55, -4.95], 30); }
-  else phoneShot(lt, t, [[1.2, P300(0, -0.4, 8.6), P300(0, -0.4, 0), 46], [4.3, P300(0, -0.8, 7.0), P300(0, -0.8, 0), 46]]);
+// 3:19 — « Ton téléphone s'allume à nouveau : Ne le laisse pas te toucher. »
+shot(36.1, 39.1, (lt, t) => {
+  if (lt < 0.9) { bedPose(t); look([-3.0, 1.9, -2.6], [-3.4, 1.55, -4.95], 32); }
+  else phoneShot(lt, t, [[0.9, P300(-0.3, -1.4, 7.0), P300(-0.3, -1.4, 0), 44], [3.0, P300(-0.3, -1.7, 6.4), P300(-0.3, -1.7, 0), 44]]);
 });
-shot(46.3, 50.3, (lt, t) => {
+// « Puis quelque chose tape contre ta fenêtre. »
+shot(39.1, 41.15, (lt, t) => {
   bedPose(t);
-  const S = C.ombre; S.at(6.6, 0, -3.1, -Math.PI / 2); S.setFace('blank');
-  const raise = smooth(range(lt, 1.0, 3.6)); S.armR.rotation.x = -2.3 * raise; S.armR.rotation.z = 0.2 * raise; S.headG.rotation.x = -0.1;
-  camKeys(lt, [[0, [13.5, 2.2, 4.5], [6.2, 2.6, -2.8], 46], [4, [11.6, 2.5, 2.6], [5.9, 2.9, -3.0], 42]]);
+  const S = C.ombre; S.at(6.55, 0, -3.1, -Math.PI / 2); S.setFace('blank');
+  let k = 0; for (const kt of EV.knocks) { const a = t - kt; if (a > -0.15 && a < 0.15) k = 1 - Math.abs(a) / 0.15; }
+  S.armR.rotation.x = -2.0 - 0.35 * k; S.armR.rotation.z = 0.1;
+  camKeys(lt, [[0, [12.5, 2.3, 3.6], [6.0, 2.8, -2.8], 44], [2.05, [11.2, 2.5, 2.4], [5.9, 2.9, -3.0], 40]]);
+  comic('TOC… TOC…', 540, 560, t - EV.knocks[0], { size: 90, color: '#e3e7ec', rot: -0.05, dur: 1.0, burst: false });
 });
-shot(50.3, 54.2, (lt, t) => {
-  bedPose(t, { creep: smooth(range(t, EV.creepHand, EV.creepHand + 3)) });
+// « Une main plaquée à plat contre la vitre. À son doigt, la même bague. »
+shot(41.15, 45.15, (lt, t) => {
+  bedPose(t);
   const S = C.ombre; S.at(6.7, 0, -3.1, -Math.PI / 2); S.setFace('blank'); S.armR.rotation.x = -2.3;
   const a = t - EV.windowSlap;
   winHand.visible = true; winHand.rotation.set(0, -Math.PI / 2, 0.15);
   winHand.position.set(a < 0 ? 7.5 : lerp(7.0, 5.5, easeIn(range(a, 0, 0.1))), 3.2, -3.2);
-  look([0.6, 2.9, -3.8], [5.3, 3.1, -3.1], 44);
+  camKeys(lt, [[0, [0.6, 2.9, -3.8], [5.3, 3.1, -3.1], 44], [1.8, [1.4, 3.0, -3.5], [5.3, 3.1, -3.15], 40], [4.0, [3.2, 3.15, -3.25], [5.4, 3.3, -3.2], 36]]);
   if (a > 0.1 && a < 0.4) shake(0.08 * (1 - range(a, 0.1, 0.4)), t);
   comic('BAM !', 820, 600, a - 0.1, { size: 120, color: '#e3e7ec', rot: 0.1, dur: 0.7 });
   winHand.updateMatrixWorld(true);
-  sparkle(winHand.ring.getWorldPosition(V3()), a - 1.0, 100);
+  sparkle(winHand.ring.getWorldPosition(V3()), t - EV.slapGlint, 110);
 });
-shot(54.2, DURATION, (lt, t) => {
-  bedPose(t, { creep: 1, phone: true });
+// « Tu n'en as acheté qu'une seule. L'un des deux est ton petit ami… »
+shot(45.15, DURATION, (lt, t) => {
+  bedPose(t, { creep: smooth(range(t, EV.creepHand, EV.creepHand + 3.5)), phone: true });
   C.moi.setFace('scared');
   const S = C.ombre; S.at(6.7, 0, -3.1, -Math.PI / 2); S.setFace('blank'); S.armR.rotation.x = -2.3;
   winHand.visible = true; winHand.rotation.set(0, -Math.PI / 2, 0.15); winHand.position.set(5.5, 3.2, -3.2);
-  camKeys(lt, [[0, [-3.6, 4.6, 3.2], [1.6, 2.2, -3.2], 52], [5.8, [-3.0, 4.2, 2.2], [1.8, 2.3, -3.2], 50]]);
-  OV.dilemma = { age: t - EV.dilemma, bed: V3(1.1, 2.6, -3.6), win: V3(5.2, 4.8, -3) };
+  camKeys(lt, [[0, [-3.6, 4.6, 3.2], [1.6, 2.2, -3.2], 52], [9.35, [-3.0, 4.2, 2.2], [1.8, 2.3, -3.2], 50]]);
+  OV.dilemma = { age: t - EV.dilemma };
   OV.vignette = 0.85;
-  OV.fade = range(t, DURATION - 1.0, DURATION - 0.1);
+  OV.fade = range(t, DURATION - 1.2, DURATION - 0.1);
 });
 
 // ---------------- rendu ----------------
@@ -387,7 +401,7 @@ function renderFrame(t) {
   if (!photoReady && t > MSGS.find((m) => m[1] === 'photo')[0] - 1) doPhoto();
   resetOV(); OV.dilemma = null; OV.vignette = 0.75;
   for (const c of allChars) c.reset();
-  miniPhone.visible = false; winHand.visible = false; R.phoneLight.intensity = 0;
+  miniPhone.visible = false; winHand.visible = false; R.phoneLight.intensity = 0; R.phoneLight.distance = 5;
   clockFace(t);
   const sh = SHOTS.find((s) => t >= s.t0 && t < s.t1) || SHOTS[SHOTS.length - 1];
   sh.fn(t - sh.t0, t);
