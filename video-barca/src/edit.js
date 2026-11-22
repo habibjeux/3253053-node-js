@@ -1,30 +1,33 @@
 // Montage vertical 9:16 à partir des images extraites (frames/<clip>/%05d.jpg, 50 i/s) :
-// recadrages, ralentis, arrêts sur image annotés, sous-titres mot à mot.
-import { LINES, WIDTH, HEIGHT, DURATION } from './timeline.js';
+// recadrages, ralentis, arrêts sur image annotés façon analyse télé, sous-titres « karaoké ».
+import { LINES, WIDTH, HEIGHT, DURATION, OLD_STARTS, NEW_STARTS } from './timeline.js';
 
-await document.fonts.load('80px "Luckiest Guy"');
+await Promise.all([document.fonts.load('80px "Luckiest Guy"'), document.fonts.load('900 80px "Montserrat"'), document.fonts.load('italic 900 80px "Montserrat"')]);
 const SCALE = Number(new URLSearchParams(location.search).get('s') || 1);
 const out = document.getElementById('out');
 out.width = Math.round(WIDTH * SCALE); out.height = Math.round(HEIGHT * SCALE);
 const ctx = out.getContext('2d');
-const FONT = '"Luckiest Guy", "DejaVu Sans", sans-serif';
+const COMIC = '"Luckiest Guy", "DejaVu Sans", sans-serif';
+const SANS = '"Montserrat", "DejaVu Sans", sans-serif';
 const SRC_FPS = 50, SRC_N = { a: 688, b: 880, c: 900 };
 
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, u) => a + (b - a) * u;
 const range = (t, a, b) => clamp((t - a) / (b - a));
 const smooth = (u) => { u = clamp(u); return u * u * (3 - 2 * u); };
+const easeOut = (u) => 1 - Math.pow(1 - clamp(u), 3);
 const easeOutBack = (u) => { u = clamp(u); const c = 1.9; return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
+// recalage des temps de la 1re version sur la nouvelle voix (interpolation par réplique)
+const R = (t) => { for (let i = 0; i < OLD_STARTS.length - 1; i++) if (t <= OLD_STARTS[i + 1]) return lerp(NEW_STARTS[i], NEW_STARTS[i + 1], range(t, OLD_STARTS[i], OLD_STARTS[i + 1])); return t; };
 
-const GOLD = '#edbb00', GRANA = '#a50044', BLAU = '#004d98', CYAN = '#3ee0ff';
+const GOLD = '#f5c518', GRANA = '#a50044', BLAU = '#1e6fd9', CYAN = '#38e1ff', RED = '#ff3d5a', WHITE = '#ffffff';
 
 // ---------------- découpage ----------------
-// crop : [[cx, cy, cw] début, [cx, cy, cw] fin], ar = hauteur/largeur du recadrage
 const SEGS = [
   { t0: 0.0, t1: 3.75, src: 'b', s0: 3.6, s1: 7.35, ar: 1.25, crop: [[1000, 540, 864], [1060, 540, 864]] },
   { t0: 3.75, t1: 7.95, src: 'c', s0: 13.8, s1: 18.0, ar: 1.25, crop: [[760, 540, 864], [560, 540, 864]] },
-  { t0: 7.95, t1: 18.45, src: 'a', s0: 0.0, s1: 0.0, ar: 0.75, crop: [[960, 540, 1440], [1000, 440, 1300]] },
-  { t0: 18.45, t1: 21.55, src: 'a', s0: 0.0, s1: 1.5, ar: 0.75, crop: [[1000, 440, 1300], [760, 420, 1200]] },
+  { t0: 7.95, t1: 18.45, src: 'a', s0: 0.0, s1: 0.0, ar: 0.75, crop: [[960, 540, 1440], [1010, 440, 1300]] },
+  { t0: 18.45, t1: 21.55, src: 'a', s0: 0.0, s1: 1.5, ar: 0.75, crop: [[1010, 440, 1300], [760, 420, 1200]] },
   { t0: 21.55, t1: 25.5, src: 'a', s0: 1.5, s1: 5.6, ar: 0.75, crop: [[720, 440, 1440], [960, 440, 1440]] },
   { t0: 25.5, t1: 27.95, src: 'a', s0: 10.0, s1: 11.6, ar: 1.0, crop: [[900, 540, 1080], [940, 540, 1080]] },
   { t0: 27.95, t1: 32.85, src: 'a', s0: 11.6, s1: 13.7, ar: 0.75, crop: [[960, 540, 1440], [960, 540, 1440]] },
@@ -34,41 +37,43 @@ const SEGS = [
   { t0: 48.95, t1: 54.25, src: 'b', s0: 0.9, s1: 3.0, ar: 0.75, crop: [[960, 540, 1440], [1040, 540, 1300]] },
   { t0: 54.25, t1: 55.45, src: 'b', s0: 4.6, s1: 5.8, ar: 1.25, crop: [[1050, 540, 864], [1050, 540, 760]] },
   { t0: 55.45, t1: 59.9, src: 'b', s0: 12.0, s1: 16.4, ar: 1.778, crop: [[1350, 540, 608], [1250, 540, 608]] },
-  { t0: 59.9, t1: DURATION, src: 'c', s0: 9.6, s1: 12.7, ar: 1.778, crop: [[900, 540, 608], [930, 540, 560]] },
-];
-// annotations (coordonnées dans l'image source 1920×1080)
+  { t0: 59.9, t1: 63.0, src: 'c', s0: 9.6, s1: 12.7, ar: 1.778, crop: [[900, 540, 608], [930, 540, 560]] },
+].map((s) => ({ ...s, t0: R(s.t0), t1: s.t1 >= 63 ? DURATION : R(s.t1) }));
+
+// annotations (coordonnées dans l'image source 1920×1080 ; temps de la 1re version, recalés par R)
 const ANN = [
-  // arrêt sur image : Raphinha
-  { seg: 2, t: 9.27, type: 'circle', p: [1540, 415], r: 70, color: GOLD, label: 'RAPHINHA' },
+  // ① arrêt sur image : Raphinha et ses deux options
+  { seg: 2, t: 9.27, type: 'focus', p: [1540, 440], r: 150, until: 12.5 },
+  { seg: 2, t: 9.27, type: 'spot', p: [1540, 435], r: 62, color: GOLD, name: 'RAPHINHA', sub: 'RÉCUPÈRE' },
   { seg: 2, t: 11.41, type: 'banner', text: '2 POSSIBILITÉS', color: GOLD },
-  { seg: 2, t: 12.63, type: 'arrow', p: [1505, 400], q: [530, 285], color: GOLD, label: '1', curve: -0.12 },
-  { seg: 2, t: 12.9, type: 'circle', p: [495, 278], r: 60, color: GOLD, label: 'YAMAL' },
-  { seg: 2, t: 13.8, type: 'tag', p: [720, 300], text: '1 CONTRE 1', color: GOLD, dy: 130 },
-  { seg: 2, t: 15.17, type: 'zone', p: [960, 620], r: [230, 110], color: CYAN, label: "L'ESPACE" },
-  { seg: 2, t: 15.17, type: 'arrow', p: [1515, 445], q: [1040, 600], color: CYAN, label: '2', dashed: true },
+  { seg: 2, t: 12.63, type: 'pass', p: [1500, 405], q: [545, 292], curve: -0.14, color: GOLD, badge: '1', label: 'LANCER YAMAL' },
+  { seg: 2, t: 13.0, type: 'spot', p: [495, 292], r: 52, color: GOLD, name: 'YAMAL', sub: '1 CONTRE 1', side: 'below' },
+  { seg: 2, t: 15.17, type: 'zone', p: [960, 625], r: [250, 105], color: CYAN, label: "L'ESPACE" },
+  { seg: 2, t: 15.17, type: 'run', p: [1510, 450], q: [1060, 600], curve: 0.1, color: CYAN, badge: '2' },
   // la passe en glissant
-  { seg: 3, t: 18.6, type: 'circle', p: [1540, 415], r: 70, color: GOLD, until: 19.6 },
-  { seg: 3, t: 20.3, type: 'pop', text: 'MÊME EN GLISSANT !', color: GOLD, y: 300 },
+  { seg: 3, t: 18.5, type: 'spot', p: [1540, 435], r: 62, color: GOLD, name: 'RAPHINHA', until: 19.7 },
+  { seg: 3, t: 20.4, type: 'pop', text: 'MÊME EN GLISSANT !', color: GOLD },
   { seg: 4, t: 21.7, type: 'banner', text: 'LAMINE YAMAL', color: GOLD },
-  { seg: 5, t: 26.2, type: 'circle', p: [1290, 430], r: 140, color: '#ff4d4d', label: 'IL RECULE !' },
-  { seg: 6, t: 28.3, type: 'banner', text: '+ 2 DÉFENSEURS', color: '#ff4d4d' },
-  { seg: 6, t: 30.6, type: 'pop', text: 'INARRÊTABLE', color: GOLD, y: 300 },
-  // arrêt sur image : les solutions de Yamal
-  { seg: 7, t: 33.0, type: 'circle', p: [1215, 310], r: 60, color: GOLD, label: 'YAMAL' },
-  { seg: 7, t: 34.0, type: 'banner', text: '2 SOLUTIONS', color: GOLD },
-  { seg: 7, t: 35.3, type: 'arrow', p: [1190, 330], q: [470, 610], color: '#ffffff', label: 'CENTRER', curve: 0.18, dashed: true },
-  { seg: 7, t: 37.4, type: 'arrow', p: [1180, 350], q: [300, 470], color: '#ff4d4d', label: 'DRIBBLER', curve: -0.25, dashed: true },
-  { seg: 7, t: 39.85, type: 'dim' },
-  { seg: 7, t: 39.85, type: 'circle', p: [864, 680], r: 62, color: CYAN, label: 'FERMÍN' },
-  { seg: 7, t: 42.0, type: 'arrow', p: [860, 690], q: [560, 790], color: CYAN, label: "L'APPEL" },
+  // Yamal face au défenseur
+  { seg: 5, t: 25.9, type: 'track', keys: [[10.0, 1080, 700], [10.5, 1180, 700], [11.0, 1300, 690], [11.6, 1330, 700]], r: 120, color: RED, name: 'IL RECULE !' },
+  { seg: 6, t: 28.2, type: 'banner', text: '+ 2 DÉFENSEURS', color: RED },
+  { seg: 6, t: 30.8, type: 'pop', text: 'INARRÊTABLE', color: GOLD },
+  // ② arrêt sur image : les solutions de Yamal
+  { seg: 7, t: 32.95, type: 'spot', p: [1218, 350], r: 52, color: GOLD, name: 'YAMAL' },
+  { seg: 7, t: 33.9, type: 'banner', text: '2 SOLUTIONS', color: GOLD },
+  { seg: 7, t: 35.3, type: 'pass', p: [1190, 360], q: [500, 600], curve: 0.2, color: WHITE, badge: '1', label: 'CENTRER' },
+  { seg: 7, t: 37.3, type: 'run', p: [1185, 385], q: [330, 490], curve: -0.22, color: RED, badge: '2', label: 'DRIBBLER' },
+  { seg: 7, t: 39.85, type: 'focus', p: [864, 690], r: 170 },
+  { seg: 7, t: 39.85, type: 'spot', p: [864, 698], r: 52, color: CYAN, name: 'FERMÍN', sub: 'SEUL !', side: 'below' },
+  { seg: 7, t: 41.9, type: 'run', p: [850, 712], q: [570, 800], curve: 0.05, color: CYAN, label: "L'APPEL", loop: true },
   // la passe
-  { seg: 8, t: 44.6, type: 'trace', p: [1220, 360], q: [600, 760], dur: 0.9, color: CYAN },
-  { seg: 8, t: 45.2, type: 'pop', text: 'PASSE CHIRURGICALE', color: CYAN, y: 300 },
+  { seg: 8, t: 44.55, type: 'pass', p: [1225, 365], q: [600, 770], curve: 0.06, color: CYAN, dur: 0.8, ball: true },
+  { seg: 8, t: 45.1, type: 'pop', text: 'PASSE CHIRURGICALE', color: CYAN },
   { seg: 9, t: 47.1, type: 'banner', text: 'FERMÍN', color: CYAN },
-  { seg: 10, t: 51.6, type: 'pop', text: 'PETIT FILET !', color: GOLD, y: 300 },
+  { seg: 10, t: 51.6, type: 'pop', text: 'PETIT FILET !', color: GOLD },
   { seg: 11, t: 54.26, type: 'goal' },
   { seg: 12, t: 55.5, type: 'banner', text: 'TOUJOURS UNE SOLUTION', color: GOLD },
-];
+].map((a) => ({ ...a, t: R(a.t), until: a.until && R(a.until) }));
 
 // ---------------- images ----------------
 const cache = new Map();
@@ -80,156 +85,252 @@ function img(src, n) {
   return p;
 }
 
-// ---------------- dessin ----------------
-let cur = null; // transformation du segment courant
-function S(p) { return [(p[0] - cur.x) * cur.k, (p[1] - cur.y) * cur.k + cur.dy]; }
-function outlined(text, x, y, size, fill, stroke = '#000', lw = null) {
-  ctx.font = `${size}px ${FONT}`; ctx.lineJoin = 'round';
-  ctx.lineWidth = lw ?? size * 0.2; ctx.strokeStyle = stroke; ctx.strokeText(text, x, y);
+// ---------------- primitives graphiques ----------------
+let cur = null;
+const S = (p) => [(p[0] - cur.x) * cur.k, (p[1] - cur.y) * cur.k + cur.dy];
+function txt(text, x, y, size, fill, { font = SANS, weight = 900, italic = false, stroke = '#000', lw = 0, align = 'center' } = {}) {
+  ctx.font = `${italic ? 'italic ' : ''}${weight} ${size}px ${font}`; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  if (lw) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.strokeText(text, x, y); }
   ctx.fillStyle = fill; ctx.fillText(text, x, y);
 }
-function pill(text, x, y, size, color, textColor = '#111', s = 1) {
-  ctx.font = `${size}px ${FONT}`; const w = ctx.measureText(text).width + size * 0.9, h = size * 1.35;
-  x = clamp(x, w / 2 + 14, WIDTH - w / 2 - 14);
+// étiquette façon habillage TV : panneau sombre, liseré couleur
+function plate(name, sub, x, y, color, s = 1) {
+  ctx.font = `italic 900 46px ${SANS}`; const w1 = ctx.measureText(name).width;
+  ctx.font = `800 26px ${SANS}`; const w2 = sub ? ctx.measureText(sub).width : 0;
+  const w = Math.max(w1, w2) + 64, h = sub ? 104 : 72;
+  x = clamp(x, w / 2 + 16, WIDTH - w / 2 - 16);
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-  ctx.font = `${size}px ${FONT}`;
-  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.roundRect(-w / 2 + 6, -h / 2 + 8, w, h, h / 2); ctx.fill();
-  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
-  ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, size * 0.06);
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = 'rgba(8,10,20,.88)'; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, 14); ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, 12, h, [14, 0, 0, 14]); ctx.fill();
+  txt(name, 6, sub ? -16 : 2, 46, '#fff', { italic: true });
+  if (sub) txt(sub, 6, 30, 26, color, { weight: 800 });
+  ctx.restore();
+  return x;
+}
+function badge(label, x, y, color, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 7); ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.lineWidth = 5; ctx.strokeStyle = '#0b0d18'; ctx.stroke();
+  txt(label, 0, 2, 40, '#0b0d18'); ctx.restore();
+}
+function curvePts(a, b, curve, prog, N = 60) {
+  const mx = (a[0] + b[0]) / 2 - (b[1] - a[1]) * curve, my = (a[1] + b[1]) / 2 + (b[0] - a[0]) * curve;
+  const pts = [];
+  for (let i = 0; i <= Math.round(N * prog); i++) { const u = i / N; pts.push([(1 - u) ** 2 * a[0] + 2 * (1 - u) * u * mx + u * u * b[0], (1 - u) ** 2 * a[1] + 2 * (1 - u) * u * my + u * u * b[1]]); }
+  return pts;
+}
+function head(x2, y2, ang, color, size = 46) {
+  ctx.save(); ctx.translate(x2, y2); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(size * 0.55, 0); ctx.lineTo(-size * 0.55, size * 0.55); ctx.lineTo(-size * 0.3, 0); ctx.lineTo(-size * 0.55, -size * 0.55); ctx.closePath();
+  ctx.lineJoin = 'round'; ctx.lineWidth = 8; ctx.strokeStyle = '#0b0d18'; ctx.stroke(); ctx.fillStyle = color; ctx.fill();
   ctx.restore();
 }
-function arrowPath(a, b, curve, prog) {
-  const mx = (a[0] + b[0]) / 2 - (b[1] - a[1]) * curve, my = (a[1] + b[1]) / 2 + (b[0] - a[0]) * curve;
-  const pts = []; const N = 40;
-  for (let i = 0; i <= N * prog; i++) { const u = i / N; pts.push([(1 - u) ** 2 * a[0] + 2 * (1 - u) * u * mx + u * u * b[0], (1 - u) ** 2 * a[1] + 2 * (1 - u) * u * my + u * u * b[1]]); }
-  return pts;
+function label(text, pts, color, s) {
+  const m = pts[Math.floor(pts.length * 0.5)], m2 = pts[Math.min(pts.length - 1, Math.floor(pts.length * 0.5) + 2)];
+  const nx = -(m2[1] - m[1]), ny = m2[0] - m[0], l = Math.hypot(nx, ny) || 1;
+  const off = ny / l < 0 ? -1 : 1; // étiquette au-dessus de la ligne
+  ctx.font = `italic 900 40px ${SANS}`; const w = ctx.measureText(text).width + 40;
+  let x = m[0] - (nx / l) * 62 * off, y = m[1] - (ny / l) * 62 * off;
+  x = clamp(x, w / 2 + 14, WIDTH - w / 2 - 14);
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -30, w, 60, 30); ctx.fill();
+  ctx.shadowColor = 'transparent'; txt(text, 0, 2, 40, '#0b0d18', { italic: true });
+  ctx.restore();
+}
+// passe : trait plein qui s'épaissit, ballon qui file le long de la courbe
+function drawPass(an, age, t) {
+  const dur = an.dur || 0.6; const prog = easeOut(range(age, 0, dur));
+  const pts = curvePts(S(an.p), S(an.q), an.curve || 0, prog);
+  if (pts.length < 2) return;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const pass of [0, 1]) {
+    for (let i = 1; i < pts.length; i++) {
+      const u = i / 60; const w = 7 + 11 * u;
+      ctx.lineWidth = pass ? w : w + 10; ctx.strokeStyle = pass ? an.color : 'rgba(5,6,12,.75)';
+      ctx.beginPath(); ctx.moveTo(...pts[i - 1]); ctx.lineTo(...pts[i]); ctx.stroke();
+    }
+  }
+  // reflet clair au centre
+  ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+  const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[Math.max(0, pts.length - 3)];
+  if (prog > 0.98) head(x2, y2, Math.atan2(y2 - y1, x2 - x1), an.color);
+  else { // ballon en mouvement + traînée
+    for (let k = 1; k < 8; k++) { const q = pts[Math.max(0, pts.length - 1 - k * 2)]; ctx.fillStyle = `rgba(255,255,255,${0.35 - k * 0.04})`; ctx.beginPath(); ctx.arc(q[0], q[1], 13 - k, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#0b0d18'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x2, y2, 14, 0, 7); ctx.fill(); ctx.stroke();
+  }
+  if (an.badge) badge(an.badge, ...S(an.p).map((v, i) => v + (i ? -40 : -40)), an.color, easeOutBack(range(age, 0, 0.3)));
+  if (an.label && prog > 0.6) label(an.label, pts, an.color, easeOutBack(range(age, dur * 0.6, dur * 0.6 + 0.3)));
+}
+// course : pointillés qui défilent
+function drawRun(an, age, t) {
+  const dur = an.dur || 0.6; const prog = easeOut(range(age, 0, dur));
+  const pts = curvePts(S(an.p), S(an.q), an.curve || 0, prog);
+  if (pts.length < 2) return;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const path = () => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); };
+  ctx.setLineDash([]); ctx.lineWidth = 20; ctx.strokeStyle = 'rgba(5,6,12,.7)'; path(); ctx.stroke();
+  ctx.setLineDash([26, 18]); ctx.lineDashOffset = -t * 90; ctx.lineWidth = 11; ctx.strokeStyle = an.color; path(); ctx.stroke();
+  ctx.setLineDash([]);
+  const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[Math.max(0, pts.length - 3)];
+  if (prog > 0.9) head(x2, y2, Math.atan2(y2 - y1, x2 - x1), an.color, 42);
+  if (an.badge) badge(an.badge, S(an.p)[0] - 40, S(an.p)[1] + 44, an.color, easeOutBack(range(age, 0, 0.3)));
+  if (an.label && prog > 0.6) label(an.label, pts, an.color, easeOutBack(range(age, dur * 0.6, dur * 0.6 + 0.3)));
+}
+// projecteur au sol sous le joueur + anneau qui tourne + étiquette reliée
+function drawSpot(p, r, color, age, t, name, sub, side) {
+  const [x, y] = S(p); const rr = r * cur.k * (0.6 + 0.4 * easeOutBack(range(age, 0, 0.35)));
+  ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.42);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rr * 1.4); g.addColorStop(0, color + 'aa'); g.addColorStop(0.6, color + '33'); g.addColorStop(1, color + '00');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rr * 1.4, 0, 7); ctx.fill();
+  ctx.lineWidth = 9; ctx.strokeStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 24;
+  ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2 * smooth(range(age, 0, 0.35))); ctx.stroke();
+  ctx.shadowBlur = 0; ctx.lineWidth = 5; ctx.setLineDash([16, 14]); ctx.lineDashOffset = t * 40;
+  ctx.beginPath(); ctx.arc(0, 0, rr * 1.32, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
+  if (!name) return;
+  const s = easeOutBack(range(age, 0.15, 0.45)); if (s <= 0) return;
+  const below = side === 'below';
+  const py = below ? y + rr * 0.42 + 120 : y - 150 - rr * 0.3;
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.globalAlpha = clamp(s);
+  ctx.beginPath(); ctx.moveTo(x, below ? y + rr * 0.42 : y - 90); ctx.lineTo(x, below ? py - 50 : py + 50); ctx.stroke(); ctx.restore();
+  plate(name, sub, x, py, color, s);
 }
 function drawAnn(an, t) {
   const age = t - an.t; if (age < 0 || (an.until && t > an.until)) return;
   const s = easeOutBack(range(age, 0, 0.3));
   ctx.save();
-  if (an.type === 'dim') { ctx.fillStyle = `rgba(0,0,0,${0.35 * smooth(range(age, 0, 0.4))})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
-  if (an.type === 'circle') {
-    const [x, y] = S(an.p); const r = an.r * cur.k;
-    ctx.translate(x, y); ctx.scale(1, 0.55);
-    ctx.lineWidth = 10; ctx.strokeStyle = an.color; ctx.shadowColor = an.color; ctx.shadowBlur = 20;
-    ctx.beginPath(); ctx.arc(0, 0, r * s, 0, Math.PI * 2 * smooth(range(age, 0, 0.35))); ctx.stroke();
-    ctx.restore(); ctx.save();
-    if (an.label) pill(an.label, x, y - r * 0.55 - 70, 50, an.color, '#111', s);
+  if (an.type === 'focus') {
+    const [x, y] = S(an.p); const a = 0.5 * smooth(range(age, 0, 0.35)) * (an.until ? 1 - range(t, an.until - 0.3, an.until) : 1);
+    ctx.beginPath(); ctx.rect(0, cur.dy, WIDTH, cur.dh); ctx.moveTo(x + an.r * cur.k * 1.4, y); ctx.ellipse(x, y, an.r * cur.k * 1.4, an.r * cur.k, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,0,10,${a})`; ctx.fill('evenodd');
+  }
+  if (an.type === 'spot') drawSpot(an.p, an.r, an.color, age, t, an.name, an.sub, an.side);
+  if (an.type === 'track') {
+    const k = an.keys; const st = cur.st; let i = 0; while (i < k.length - 2 && st > k[i + 1][0]) i++;
+    const u = range(st, k[i][0], k[i + 1][0]); const p = [lerp(k[i][1], k[i + 1][1], u), lerp(k[i][2], k[i + 1][2], u)];
+    drawSpot(p, an.r, an.color, age, t, an.name, null);
   }
   if (an.type === 'zone') {
-    const [x, y] = S(an.p);
-    ctx.translate(x, y); ctx.fillStyle = an.color + '44'; ctx.strokeStyle = an.color; ctx.lineWidth = 6; ctx.setLineDash([18, 12]);
-    ctx.beginPath(); ctx.ellipse(0, 0, an.r[0] * cur.k * s, an.r[1] * cur.k * s, 0, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.restore(); ctx.save(); if (an.label) pill(an.label, x, y, 50, an.color, '#111', s);
+    const [x, y] = S(an.p); const rx = an.r[0] * cur.k * s, ry = an.r[1] * cur.k * s;
+    ctx.save(); ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.clip();
+    ctx.fillStyle = an.color + '30'; ctx.fillRect(x - rx, y - ry, rx * 2, ry * 2);
+    ctx.strokeStyle = an.color + '88'; ctx.lineWidth = 5; const off = (t * 30) % 28;
+    for (let d = -rx - ry; d < rx + ry; d += 28) { ctx.beginPath(); ctx.moveTo(x + d + off - ry, y + ry); ctx.lineTo(x + d + off + ry, y - ry); ctx.stroke(); }
+    ctx.restore();
+    ctx.lineWidth = 6 + Math.sin(t * 6) * 2; ctx.strokeStyle = an.color; ctx.setLineDash([22, 14]); ctx.lineDashOffset = -t * 30;
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    if (an.label) { ctx.font = `italic 900 40px ${SANS}`; const w = ctx.measureText(an.label).width + 40; ctx.fillStyle = an.color; ctx.beginPath(); ctx.roundRect(x - w / 2, y - 30, w, 60, 30); ctx.fill(); txt(an.label, x, y + 2, 40, '#0b0d18', { italic: true }); }
   }
-  if (an.type === 'arrow' || an.type === 'trace') {
-    const prog = smooth(range(age, 0, an.dur || 0.5));
-    const pts = arrowPath(S(an.p), S(an.q), an.curve || 0, prog);
-    if (pts.length > 1) {
-      ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(0,0,0,.5)';
-      if (an.dashed) ctx.setLineDash([30, 20]);
-      ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x + 4, y + 5) : ctx.moveTo(x + 4, y + 5))); ctx.stroke();
-      ctx.strokeStyle = an.color; ctx.shadowColor = an.color; ctx.shadowBlur = 18; ctx.lineWidth = 11;
-      ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
-      ctx.setLineDash([]);
-      const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[Math.max(0, pts.length - 4)];
-      const ang = Math.atan2(y2 - y1, x2 - x1);
-      if (an.type === 'arrow') { ctx.fillStyle = an.color; ctx.beginPath(); ctx.moveTo(x2 + Math.cos(ang) * 30, y2 + Math.sin(ang) * 30); ctx.lineTo(x2 + Math.cos(ang + 2.4) * 34, y2 + Math.sin(ang + 2.4) * 34); ctx.lineTo(x2 + Math.cos(ang - 2.4) * 34, y2 + Math.sin(ang - 2.4) * 34); ctx.fill(); }
-      else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x2, y2, 12, 0, 7); ctx.fill(); }
-      ctx.shadowBlur = 0;
-      if (an.label && prog > 0.6) { const m = pts[Math.floor(pts.length * 0.55)]; pill(an.label, m[0], m[1] - 50, 46, an.color, '#111', easeOutBack(range(age, 0.3, 0.6))); }
-    }
+  if (an.type === 'pass') drawPass(an, age, t);
+  if (an.type === 'run') drawRun(an, age, t);
+  if (an.type === 'banner') {
+    const y = cur.dy > 260 ? cur.dy - 78 : 250; const w = 0;
+    ctx.translate(WIDTH / 2, y); ctx.scale(s, s);
+    ctx.font = `italic 900 58px ${SANS}`; const bw = ctx.measureText(an.text).width + 110;
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 20;
+    ctx.fillStyle = 'rgba(8,10,20,.9)'; ctx.beginPath(); ctx.moveTo(-bw / 2 + 24, -42); ctx.lineTo(bw / 2, -42); ctx.lineTo(bw / 2 - 24, 42); ctx.lineTo(-bw / 2, 42); ctx.closePath(); ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = an.color; ctx.beginPath(); ctx.moveTo(-bw / 2 + 24, -42); ctx.lineTo(-bw / 2 + 52, -42); ctx.lineTo(-bw / 2 + 28, 42); ctx.lineTo(-bw / 2, 42); ctx.closePath(); ctx.fill();
+    txt(an.text, 20, 2, 58, '#fff', { italic: true });
   }
-  if (an.type === 'tag') { const [x, y] = S(an.p); pill(an.text, x, y + an.dy, 46, an.color, '#111', s); }
-  if (an.type === 'banner') { pill(an.text, WIDTH / 2, cur.dy - 70 > 120 ? cur.dy - 70 : 230, 64, an.color, '#111', s); }
   if (an.type === 'pop') {
-    const a2 = 1 - range(age, 1.6, 1.9); ctx.globalAlpha = a2;
-    ctx.translate(WIDTH / 2, an.y); ctx.rotate(-0.05); ctx.scale(s, s); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    outlined(an.text, 0, 0, 96, an.color, '#000', 18);
+    const a2 = 1 - range(age, 1.5, 1.8); ctx.globalAlpha = a2;
+    const y = cur.dy > 300 ? cur.dy - 90 : 300;
+    ctx.translate(WIDTH / 2, y); ctx.rotate(-0.05); ctx.scale(s, s);
+    txt(an.text, 0, 0, 92, an.color, { font: COMIC, weight: 400, stroke: '#000', lw: 18 });
   }
   if (an.type === 'goal') {
     ctx.fillStyle = `rgba(255,255,255,${0.75 * (1 - range(age, 0, 0.3))})`; ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.translate(WIDTH / 2, 760); ctx.rotate(-0.08); const k = easeOutBack(range(age, 0, 0.25)) * (1 + age * 0.08); ctx.scale(k, k);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    outlined('BUUUUT !', 0, 0, 190, GOLD, GRANA, 34);
+    txt('BUUUUT !', 0, 0, 190, GOLD, { font: COMIC, weight: 400, stroke: GRANA, lw: 34 });
   }
   ctx.restore();
 }
 
-// sous-titres (mot actif en or)
+// ---------------- sous-titres « karaoké » ----------------
+const KEYWORDS = /^(BARÇA|YAMAL|LAMINE|RAPHINHA|FERMÍN|VILLARREAL|CATALANS|BUUUUT)/;
 const CHUNKS = [];
 for (const [a, b, text] of LINES) {
   const words = [];
   for (const w of text.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').trim().split(/\s+/)) {
-    if (words.length && /^([€:;!?,.»…]+|\.\.\.)$/.test(w)) words[words.length - 1] += ' ' + w; else words.push(w);
+    if (words.length && /^([€:;!?,.»…]+|\.\.\.)$/.test(w)) words[words.length - 1] += w === '…' ? w : ' ' + w; else words.push(w);
   }
-  const weights = words.map((w) => w.length + 3); const tot = weights.reduce((s, v) => s + v, 0);
+  const weights = words.map((w) => w.replace(/[^\p{L}\d]/gu, '').length + 2.5); const tot = weights.reduce((s, v) => s + v, 0);
   let tt = a; const timed = words.map((w, i) => { const d = (b - a) * weights[i] / tot; const r = { w, t0: tt, t1: tt + d }; tt += d; return r; });
   let c = [];
   const flush = () => { if (c.length) CHUNKS.push({ words: c, t0: c[0].t0, t1: c[c.length - 1].t1 }); c = []; };
-  for (const tw of timed) { const len = c.reduce((s, x) => s + x.w.length + 1, 0); if (c.length >= 3 || len + tw.w.length > 17) flush(); c.push(tw); if (/[,.:;!?…]$/.test(tw.w) && c.length >= 2) flush(); }
+  for (const tw of timed) { const len = c.reduce((s, x) => s + x.w.length + 1, 0); if (c.length >= 3 || len + tw.w.length > 16) flush(); c.push(tw); if (/[,.:;!?…]$/.test(tw.w)) flush(); }
   flush();
 }
 function drawSubtitles(t, cy) {
-  const ch = CHUNKS.find((c) => t >= c.t0 && t < c.t1 + 0.05); if (!ch) return;
-  const size = 88; ctx.font = `${size}px ${FONT}`;
-  const words = ch.words.map((w) => w.w.toUpperCase()); const space = size * 0.28;
+  const ch = CHUNKS.find((c) => t >= c.t0 && t < c.t1 + 0.08); if (!ch) return;
+  const size = 84; ctx.font = `900 ${size}px ${SANS}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const words = ch.words.map((w) => w.w.toUpperCase()); const space = 22;
   const widths = words.map((w) => ctx.measureText(w).width);
   const rows = [[]]; let rw = 0;
-  words.forEach((w, i) => { if (rw + widths[i] > WIDTH - 120 && rows[rows.length - 1].length) { rows.push([]); rw = 0; } rows[rows.length - 1].push(i); rw += widths[i] + space; });
-  const pop = easeOutBack(range(t, ch.t0, ch.t0 + 0.16));
-  ctx.save(); ctx.translate(WIDTH / 2, cy); ctx.scale(0.8 + 0.2 * pop, 0.8 + 0.2 * pop); ctx.translate(-WIDTH / 2, -cy);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  words.forEach((w, i) => { if (rw + widths[i] > WIDTH - 110 && rows[rows.length - 1].length) { rows.push([]); rw = 0; } rows[rows.length - 1].push(i); rw += widths[i] + space; });
+  const enter = easeOutBack(range(t, ch.t0, ch.t0 + 0.14));
+  ctx.save(); ctx.translate(WIDTH / 2, cy); ctx.scale(0.86 + 0.14 * enter, 0.86 + 0.14 * enter); ctx.translate(-WIDTH / 2, -cy);
   rows.forEach((row, ri) => {
     const total = row.reduce((s, i) => s + widths[i], 0) + space * (row.length - 1);
-    let x = WIDTH / 2 - total / 2; const y = cy + (ri - (rows.length - 1) / 2) * size * 1.12;
+    let x = WIDTH / 2 - total / 2; const y = cy + (ri - (rows.length - 1) / 2) * size * 1.18;
     for (const i of row) {
-      const active = t >= ch.words[i].t0 && t < ch.words[i].t1 + 0.02;
-      ctx.save(); if (active) { ctx.translate(x + widths[i] / 2, y); ctx.scale(1.08, 1.08); ctx.translate(-(x + widths[i] / 2), -y); }
-      ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowOffsetY = 8;
-      outlined(words[i], x, y, size, active ? GOLD : '#ffffff', '#000', 17);
-      ctx.restore(); x += widths[i] + space;
+      const w = ch.words[i]; const active = t >= w.t0 && t < w.t1 + 0.03; const said = t >= w.t0;
+      const key = KEYWORDS.test(words[i]);
+      if (active) { // encadré qui « saute » sur le mot prononcé
+        const k = easeOutBack(range(t, w.t0, w.t0 + 0.12));
+        ctx.save(); ctx.translate(x + widths[i] / 2, y); ctx.rotate(-0.025); ctx.scale(k, k);
+        ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6;
+        ctx.fillStyle = key ? GRANA : GOLD; ctx.beginPath(); ctx.roundRect(-widths[i] / 2 - 16, -size * 0.58, widths[i] + 32, size * 1.12, 16); ctx.fill();
+        ctx.restore();
+      }
+      ctx.save();
+      if (active) { ctx.translate(x + widths[i] / 2, y); ctx.scale(1.06, 1.06); ctx.translate(-(x + widths[i] / 2), -y); }
+      ctx.lineJoin = 'round'; ctx.lineWidth = active ? 0 : 16; ctx.strokeStyle = '#000';
+      if (!active) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowOffsetY = 7; ctx.strokeText(words[i], x, y + 3); ctx.shadowColor = 'transparent'; }
+      ctx.fillStyle = active ? (key ? '#fff' : '#0b0d18') : key ? GOLD : said ? '#ffffff' : 'rgba(255,255,255,.92)';
+      ctx.fillText(words[i], x, y + 3);
+      ctx.restore();
+      x += widths[i] + space;
     }
   });
   ctx.restore();
 }
 
 async function renderFrame(t) {
-  const si = SEGS.findIndex((s) => t >= s.t0 && t < s.t1); const seg = SEGS[si < 0 ? SEGS.length - 1 : si];
+  let si = SEGS.findIndex((s) => t >= s.t0 && t < s.t1); if (si < 0) si = SEGS.length - 1;
+  const seg = SEGS[si];
   const u = range(t, seg.t0, seg.t1);
   const st = lerp(seg.s0, seg.s1, u);
   const n = clamp(Math.round(st * SRC_FPS) + 1, 1, SRC_N[seg.src]);
   const im = await img(seg.src, n);
   const e = smooth(u);
   const [cx, cy, cw] = seg.crop[0].map((v, k) => lerp(v, seg.crop[1][k], e));
-  const chh = cw * seg.ar;
-  const k = WIDTH / cw, dh = chh * k;
+  const chh = cw * seg.ar, k = WIDTH / cw, dh = chh * k;
   const dy = seg.ar > 1.7 ? 0 : Math.round(860 - dh / 2);
-  cur = { x: clamp(cx - cw / 2, 0, 1920 - cw), y: clamp(cy - chh / 2, 0, 1080 - chh), k, dy };
+  cur = { x: clamp(cx - cw / 2, 0, 1920 - cw), y: clamp(cy - chh / 2, 0, 1080 - chh), k, dy, dh, st };
+  const frozen = seg.s0 === seg.s1;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  // fond flouté
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  if (seg.ar < 1.7) {
-    ctx.save(); ctx.filter = 'blur(30px) brightness(0.45) saturate(1.2)';
-    const bw = HEIGHT * 16 / 9; ctx.drawImage(im, (WIDTH - bw) / 2, 0, bw, HEIGHT); ctx.restore();
+  ctx.fillStyle = '#05060c'; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  if (seg.ar < 1.7) { ctx.save(); ctx.filter = 'blur(30px) brightness(0.4) saturate(1.2)'; const bw = HEIGHT * 16 / 9; ctx.drawImage(im, (WIDTH - bw) / 2, 0, bw, HEIGHT); ctx.restore(); }
+  ctx.save(); if (frozen) ctx.filter = 'saturate(0.75) brightness(0.92)';
+  ctx.drawImage(im, cur.x, cur.y, cw, chh, 0, dy, WIDTH, dh); ctx.restore();
+  if (seg.ar < 1.7) { ctx.fillStyle = GOLD; ctx.fillRect(0, dy - 5, WIDTH, 5); ctx.fillStyle = GRANA; ctx.fillRect(0, dy + dh, WIDTH, 5); }
+  if (frozen) { // indicateur « ARRÊT SUR IMAGE »
+    ctx.fillStyle = 'rgba(8,10,20,.85)'; ctx.beginPath(); ctx.roundRect(24, dy + dh - 78, 276, 56, 28); ctx.fill();
+    ctx.fillStyle = RED; ctx.beginPath(); ctx.arc(56, dy + dh - 50, 9 + Math.sin(t * 8) * 2, 0, 7); ctx.fill();
+    txt('ARRÊT SUR IMAGE', 174, dy + dh - 48, 26, '#fff', { weight: 800 });
   }
-  ctx.drawImage(im, cur.x, cur.y, cw, chh, 0, dy, WIDTH, dh);
-  if (seg.ar < 1.7) { ctx.fillStyle = GOLD; ctx.fillRect(0, dy - 6, WIDTH, 6); ctx.fillStyle = GRANA; ctx.fillRect(0, dy + dh, WIDTH, 6); }
-  // arrêt sur image : léger voile + icône pause
-  if (seg.s0 === seg.s1) {
-    ctx.fillStyle = 'rgba(0,0,30,.12)'; ctx.fillRect(0, dy, WIDTH, dh);
-    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(WIDTH - 90, dy + 30, 16, 50); ctx.fillRect(WIDTH - 62, dy + 30, 16, 50);
-  }
-  // vignette
   const g = ctx.createRadialGradient(WIDTH / 2, HEIGHT / 2, HEIGHT * 0.3, WIDTH / 2, HEIGHT / 2, HEIGHT * 0.75);
   g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)'); ctx.fillStyle = g; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  for (const an of ANN) if (an.seg === (si < 0 ? SEGS.length - 1 : si)) drawAnn(an, t);
-  // badge « mi-temps »
-  if (t > 3.9 && t < 7.95) pill('MI-TEMPS : 0 - 2', WIDTH / 2, 230, 64, '#ffffff', GRANA, easeOutBack(range(t, 3.9, 4.2)));
-  // flash de coupe
-  for (const s of SEGS) { const a = t - s.t0; if (s.t0 > 0 && a >= 0 && a < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.35 * (1 - a / 0.12)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); } }
-  drawSubtitles(t, seg.ar > 1.7 ? 1500 : Math.min(1560, dy + dh + 160));
+  for (const an of ANN) if (an.seg === si) drawAnn(an, t);
+  if (si === 1) drawAnn({ type: 'banner', text: 'MI-TEMPS : 0 - 2', color: RED, t: SEGS[1].t0 + 0.15 }, t);
+  for (const s of SEGS) { const a = t - s.t0; if (s.t0 > 0 && a >= 0 && a < 0.12) { ctx.fillStyle = `rgba(255,255,255,${0.3 * (1 - a / 0.12)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); } }
+  drawSubtitles(t, seg.ar > 1.7 ? 1480 : clamp(dy + dh + 150, 1380, 1560));
   const f = range(t, DURATION - 0.8, DURATION - 0.05); if (f > 0) { ctx.fillStyle = `rgba(0,0,0,${f})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
   if (t < 0.25) { ctx.fillStyle = `rgba(0,0,0,${1 - t / 0.25})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
 }
