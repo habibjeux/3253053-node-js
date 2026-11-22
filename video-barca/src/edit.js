@@ -89,8 +89,10 @@ function outlined(text, x, y, size, fill, stroke = '#000', lw = null) {
   ctx.fillStyle = fill; ctx.fillText(text, x, y);
 }
 function pill(text, x, y, size, color, textColor = '#111', s = 1) {
-  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
   ctx.font = `${size}px ${FONT}`; const w = ctx.measureText(text).width + size * 0.9, h = size * 1.35;
+  x = clamp(x, w / 2 + 14, WIDTH - w / 2 - 14);
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.font = `${size}px ${FONT}`;
   ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.roundRect(-w / 2 + 6, -h / 2 + 8, w, h, h / 2); ctx.fill();
   ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
   ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, size * 0.06);
