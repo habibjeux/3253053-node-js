@@ -16,11 +16,13 @@ lever les yeux suffit pour que ton reflet se désynchronise… et les reflets mo
   dizaines de doubles de Soren.
 
 Habillage TikTok : sous-titres karaoké centrés dans la zone sûre (au-dessus du tiers bas, loin des icônes
-de droite), accroche dans les 2 premières secondes. Minutage provisoire (86 s) dans `src/timeline.js`,
-à recaler sur la voix-off.
+de droite), accroche dans les 2 premières secondes. Les 28 répliques de la voix-off
+(ElevenLabs, 98 s, posée à +0,3 s) et tous les événements sont calés dans `src/timeline.js` ; la vidéo dure 1 min 41.
 
 ```bash
 npm install
 node render.mjs --preview 2,30,80 --scale 0.5
 node render.mjs --workers 3
+node audio.mjs                 # nappes, crépitements de verre, bourdonnements, engrenages → out/bande_son.wav
+./mix.sh out/voix/voix.mp3     # → out/soren_9x16.mp4
 ```

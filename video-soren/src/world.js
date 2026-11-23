@@ -196,7 +196,7 @@ export function drawCracks(ctx, w, h, k) {
 }
 
 // ---------------- salle de la tour ----------------
-export const CARDS = [['BOULANGER', 'REMPLACÉ'], ['VEILLEUR DE NUIT', 'REMPLACÉ'], ['MAYA', 'ISOLÉE'], ['M. ARNAUD', 'REMPLACÉ'], ['LÉNA', 'SOUS CONTRÔLE'], ['SACHA', 'REMPLACÉ']];
+export const CARDS = [['BOULANGER', 'PERDU'], ['GARDIEN DE NUIT', 'PERDU'], ['MAYA', 'ISOLÉE'], ['M. ARNAUD', 'PERDU'], ['LÉNA', 'SOUS CONTRÔLE'], ['SACHA', 'REMPLACÉ']];
 export function drawCard(ctx, w, h, name, state, hot) {
   ctx.fillStyle = '#081222'; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = 'rgba(140,190,255,.07)'; for (let y = 0; y < h; y += 6) ctx.fillRect(0, y, w, 2);
@@ -204,7 +204,7 @@ export function drawCard(ctx, w, h, name, state, hot) {
   ctx.fillStyle = '#c6d2ff'; ctx.beginPath(); ctx.arc(63, 58, 22, 0, 7); ctx.fill(); ctx.fillRect(38, 84, 50, 34);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillStyle = hot ? '#ffd23f' : '#e6eeff'; ctx.font = `900 ${name.length > 12 ? 34 : 44}px "Montserrat", sans-serif`; ctx.fillText(name, 128, 52);
-  ctx.fillStyle = state === 'ISOLÉE' ? '#ff9f43' : state === 'REMPLACÉ' ? '#8fa8ff' : '#7fe7ff'; ctx.font = `800 32px "Montserrat", sans-serif`; ctx.fillText(state, 128, 102);
+  ctx.fillStyle = state === 'ISOLÉE' ? '#ff9f43' : state === 'PERDU' ? '#ff5a6e' : state === 'REMPLACÉ' ? '#8fa8ff' : '#7fe7ff'; ctx.font = `800 32px "Montserrat", sans-serif`; ctx.fillText(state, 128, 102);
   ctx.strokeStyle = hot ? '#ffd23f' : 'rgba(140,190,255,.5)'; ctx.lineWidth = hot ? 10 : 4; ctx.strokeRect(4, 4, w - 8, h - 8);
 }
 export function drawBig(ctx, w, h, hot) {

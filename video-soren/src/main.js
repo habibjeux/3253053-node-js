@@ -242,133 +242,6 @@ const cracks = (k) => once('cracks', Math.round(k * 20), () => redraw(CO.crackTe
 const RP = (x, y, z) => [400 + x, y, z]; // salle de la tour
 const CP = (x, y, z) => [200 + x, y, z]; // couloir
 
-// ---------------- plans ----------------
-const SHOTS = []; const shot = (t0, t1, fn) => SHOTS.push({ t0, t1, fn });
-
-// HOOK : un homme lève la tête après minuit… son reflet, lui, ne bouge pas.
-shot(0, 2.6, (lt, t) => {
-  setMode('night'); const v = vitrine(-1, -2);
-  const M = C.p1, Rf = C.rP1; placeInVitrine(v, M, Rf);
-  const up = smooth(range(t, 0.35, 0.9));
-  M.headG.rotation.x = lerp(0.55, -0.6, up); M.setFace(t > EV.hookCrack ? 'scared' : 'neutral');
-  mirrorPose(M, Rf); Rf.headG.rotation.x = 0.55; Rf.setFace(t > EV.hookCrack + 0.3 ? 'smile' : 'neutral');
-  if (t > EV.hookCrack + 0.6) Rf.headG.rotation.x = lerp(0.55, -0.2, smooth(range(t, 1.6, 2.4)));
-  const g = V3(v.x, 2.2, v.z);
-  shadowAt(v.x, 0, v.z, 10, [0.4, 1, 0.5]);
-  camKeys(lt, [[0, [v.x + 3.4, 2.1, v.z + 6.2], [v.x - 0.2, 2.0, v.z - 0.6], 42], [2.6, [v.x + 3.0, 2.1, v.z + 5.0], [v.x - 0.3, 2.0, v.z - 0.6], 38]]);
-  fill.position.set(v.x + 1.2, 3, v.z + 2.5); fill.intensity = 22; fill.color.set('#cfe0ff');
-  shards(t, EV.hookCrack, g);
-  OV.hook = { text: 'NE LÈVE JAMAIS LA TÊTE\nAPRÈS MINUIT.', age: lt - 0.05, dur: 2.6 };
-  comic('CRRRK', 360, 760, t - EV.hookCrack, { size: 100, color: SILVER, rot: -0.1, dur: 0.8 });
-  OV.flash = t > EV.hookCrack && t < EV.hookCrack + 0.12 ? 0.5 : 0;
-});
-// la ville et la tour de verre (jour gris-bleuté)
-shot(2.6, 6.5, (lt, t) => {
-  setMode('day'); shadowAt(0, 0, -20, 60);
-  camKeys(lt, [[0, [70, 120, 110], [0, 10, -40], 44], [3.9, [18, 42, 46], [0, 30, -80], 50]], (u) => u);
-  const crowd = [[C.p1, -2, 10, Math.PI, 1.1], [C.p2, 2.5, -2, 0, 1.0], [C.boulanger, -3, -14, 0, 0.9], [C.kid, 1, 4, Math.PI, 1.2]];
-  for (const [c, x, z, h, sp] of crowd) { c.at(x, 0, z + Math.cos(h) * lt * sp, h).walk(lt * 6 + x, 0.5); headDown(c); }
-  gearsAt(t, 0.15);
-});
-// Soren livre ses colis, les yeux baissés
-shot(6.5, 11, (lt, t) => {
-  setMode('day');
-  const S = C.soren; const z = 2 + lt * 1.3; S.at(0.8, 0, z, 0).walk(lt * 7, 0.55); headDown(S);
-  S.armR.rotation.x = -0.9; S.root.updateMatrixWorld(true);
-  R.parcel.visible = true; R.parcel.position.copy(S.armR.localToWorld(V3(0, -0.8, 0.35)));
-  shadowAt(0.8, 0, z, 10);
-  camKeys(lt, [[0, [2.4, 2.4, z + 5.5], [0.6, 1.6, z], 44], [4.5, [1.8, 2.2, z + 4.6], [0.7, 1.7, z], 40]]);
-  tag('SOREN', HEAD(S), lt - 0.4, 2.6, '#ffffff', '#23262f');
-  C.p2.at(-2.6, 0, z - 5 + lt * 0.3, 0).walk(lt * 6, 0.5); headDown(C.p2);
-});
-// tout le monde marche en fixant le sol
-shot(11, 15, (lt, t) => {
-  setMode('day'); shadowAt(0, 0, -6, 18);
-  const crowd = [[C.boulanger, -2.6, -10, 0, 1.0], [C.p1, 2.4, 2, Math.PI, 1.1], [C.kid, -0.8, -4, 0, 1.2], [C.veilleur, 1.2, -14, 0, 0.9], [C.p2, -3.2, 4, Math.PI, 1.0]];
-  for (const [c, x, z, h, sp] of crowd) { c.at(x, 0, z + Math.cos(h) * lt * sp, h).walk(lt * 6 + x, 0.5); headDown(c); }
-  camKeys(lt, [[0, [0, 9, 14], [0, 0.5, -6], 44], [4, [0, 6.5, 10], [0, 0.8, -6], 44]]);
-  comic('TÊTE BAISSÉE.', 500, 520, lt - 0.6, { size: 80, color: '#ffffff', rot: -0.04, dur: 3.0, burst: false });
-});
-// la règle : après minuit, on lève la tête… crac, le reflet se désynchronise
-shot(15, 20, (lt, t) => {
-  setMode('night'); const v = vitrine(1, -24);
-  const M = C.veilleur, Rf = C.rVeil; placeInVitrine(v, M, Rf);
-  const up = smooth(range(t, EV.ruleLook - 0.3, EV.ruleLook + 0.3));
-  M.headG.rotation.x = lerp(0.55, -0.55, up); M.setFace(t > EV.ruleCrack ? 'scared' : 'neutral');
-  mirrorPose(M, Rf);
-  if (t > EV.ruleCrack) { const d = smooth(range(t, EV.ruleCrack, EV.ruleCrack + 0.8)); Rf.headG.rotation.x = lerp(-0.55, 0.3, d); Rf.headG.rotation.y = 0.4 * d; Rf.armR.rotation.x = -2.6 * d; Rf.setFace('smile'); Rf.root.position.x += (v.side) * 0.0; }
-  shadowAt(v.x, 0, v.z, 10, [0.4, 1, 0.5]);
-  if (lt < 1.2) look([v.x - 2, 1.6, v.z + 6], [v.x, 2.5, v.z - 2], 46);
-  else camKeys(lt, [[1.2, [v.x - 3.4, 2.1, v.z + 6.2], [v.x + 0.2, 2.0, v.z - 0.6], 42], [5, [v.x - 3.0, 2.1, v.z + 5.0], [v.x + 0.3, 2.0, v.z - 0.6], 38]]);
-  fill.position.set(v.x - 1.2, 3, v.z + 2.5); fill.intensity = 16; fill.color.set('#cfe0ff');
-  OV.title = lt < 1.6 ? { text: '00:01', age: lt, sub: 'APRÈS MINUIT' } : null;
-  shards(t, EV.ruleCrack, V3(v.x - v.side * 0.6, 2.2, v.z));
-  comic('CRRRK', 360, 760, t - EV.ruleCrack, { size: 100, color: SILVER, rot: -0.1, dur: 0.8 });
-  OV.flash = t > EV.ruleCrack && t < EV.ruleCrack + 0.1 ? 0.45 : 0;
-  OV.vignette = 0.75;
-});
-// le couloir et le miroir : Maya regarde trop longtemps
-function corridorMaya(t, { freeze = false, detach = 0 } = {}) {
-  const M = C.maya, Rf = C.rMaya;
-  M.at(200, 0, 2.2, Math.PI); M.setFace('happy');
-  Rf.at(200, 0, -2.2, 0);
-  return [M, Rf];
-}
-shot(20, 28, (lt, t) => {
-  setMode('corridor');
-  const [M, Rf] = corridorMaya(t);
-  const walk = range(lt, 0, 2.2); M.root.position.z = lerp(5.5, 2.2, walk); if (walk < 1) M.walk(lt * 7, 0.5);
-  M.headG.rotation.x = lt > 2.4 ? -0.08 : 0; M.setFace(lt > 3 ? 'neutral' : 'happy');
-  M.headG.rotation.z = Math.sin(lt * 0.8) * 0.06 * (lt > 3 ? 1 : 0);
-  mirrorPose(M, Rf); Rf.root.position.z = -M.root.position.z; Rf.setFace(M.expr);
-  CO.light.intensity = 18; CO.lightR.intensity = 10; cracks(0);
-  camKeys(lt, [[0, CP(0.6, 2.2, 8.6), CP(0, 1.5, 0), 46], [8, CP(0.5, 1.6, 5.2), CP(0, 1.4, 0), 40]]);
-  tag('MAYA', HEAD(M), lt - 1.0, 2.0, '#0b0d18', '#ff7aa8');
-  if (lt > 4) comic('…', 760, 620, lt - 4.2, { size: 120, color: '#ffffff', dur: 3, burst: false });
-});
-shot(28, 34, (lt, t) => {
-  setMode('corridor');
-  const [M, Rf] = corridorMaya(t);
-  // Maya bouge, son reflet reste figé… puis se détache et recule dans le couloir du miroir
-  M.headG.rotation.z = Math.sin(lt * 2.2) * 0.22; M.armR.rotation.x = -1.6 - Math.sin(lt * 6) * 0.4 * (lt > 1 && lt < 3 ? 1 : 0); M.setFace(lt < 1.5 ? 'surprised' : 'scared');
-  Rf.setFace(t > EV.mirrorDetach ? 'smile' : 'neutral');
-  if (t > EV.mirrorDetach) { const d = range(t, EV.mirrorDetach, EV.mirrorDetach + 2.6); Rf.root.position.z = -2.2 - d * 4.5; Rf.root.rotation.y = d > 0.15 ? Math.PI : 0; Rf.walk(t * 6, 0.4); Rf.headG.rotation.y = d > 0.15 ? 0 : 0; }
-  CO.light.intensity = lerp(18, 7, range(lt, 0, 6)); CO.lightR.intensity = lerp(10, 2, range(lt, 0, 6));
-  OV.vignette = lerp(0.6, 0.85, range(lt, 0, 6));
-  if (lt < 3) camKeys(lt, [[0, CP(1.5, 1.4, 4.4), CP(-0.2, 1.3, -1), 44], [3, CP(1.4, 1.3, 3.8), CP(-0.2, 1.3, -1.2), 40]]);
-  else camKeys(lt, [[3, CP(1.6, 1.5, 4.6), CP(-0.3, 1.3, -3), 40], [6, CP(1.4, 1.4, 3.8), CP(-0.3, 1.2, -4), 34]]);
-  comic('IL NE BOUGE PLUS', 500, 520, t - EV.mirrorFreeze - 0.4, { size: 70, color: SILVER, rot: -0.04, dur: 2.4, burst: false });
-});
-shot(34, 36.5, (lt, t) => {
-  setMode('corridor');
-  const [M, Rf] = corridorMaya(t); M.setFace('cry'); M.armL.rotation.x = M.armR.rotation.x = -2.0; Rf.visible = false; Rf.root.visible = false;
-  cracks(smooth(range(t, EV.mirrorCrack, EV.mirrorCrack + 0.3)));
-  CO.light.intensity = 5 + Math.sin(t * 40) * 2; CO.lightR.intensity = 1;
-  look(CP(1.3, 1.9, 5.6), CP(-0.1, 1.8, 0), 40);
-  if (lt > 0.05 && lt < 0.3) shake(0.06, t);
-  comic('CRAC !', 500, 640, t - EV.mirrorCrack, { size: 130, color: SILVER, rot: -0.08, dur: 1.0 });
-  OV.vignette = 0.85;
-});
-// les autres habitants perdent aussi leur reflet
-shot(36.5, 40, (lt, t) => {
-  setMode('dusk'); const v = vitrine(-1, 10);
-  const B = C.boulanger; placeInVitrine(v, B, C.rBoul); C.rBoul.root.visible = false; B.setFace('scared'); B.headG.rotation.x = 0.1;
-  B.armR.rotation.x = -1.2;
-  shadowAt(v.x, 0, v.z, 10);
-  camKeys(lt, [[0, [v.x + 3.4, 2.1, v.z + 6.2], [v.x - 0.2, 2.0, v.z - 0.6], 42], [3.5, [v.x + 3.0, 2.1, v.z + 5.0], [v.x - 0.3, 2.0, v.z - 0.6], 38]]);
-  fill.position.set(v.x + 2.5, 3, v.z + 1.5); fill.intensity = 14;
-  comic('PLUS DE REFLET.', 500, 520, lt - 0.6, { size: 80, color: SILVER, rot: -0.04, dur: 2.6, burst: false });
-  OV.vignette = 0.7;
-});
-// nuit : Soren reste éveillé
-shot(40, 42.5, (lt, t) => {
-  setMode('night'); shadowAt(-3, 0, 4, 14, [-0.4, 1, 0.6]);
-  const S = C.soren; S.at(-3.6, 0, 4, Math.PI * 0.9); S.sneak(lt * 5); S.setFace('determined'); S.headG.rotation.x = -0.5;
-  look([-1.6, 1.6, 7.8], [-3.4, 4, -10], 52);
-  fill.position.set(-2.5, 3, 6); fill.intensity = 12; fill.color.set('#9fb6ff');
-  OV.title = { text: 'MINUIT', age: lt, sub: 'SOREN NE DORT PAS' }; OV.vignette = 0.75; OV.fade = 1 - range(lt, 0, 0.4);
-});
-// des dizaines de reflets glissent le long des murs vers la tour
 function wallReflections(t, k0 = 0) {
   const list = [C.rBoul, C.rVeil, C.rP1, C.rMaya, ...C.doubles.slice(0, 8)];
   list.forEach((r, k) => {
@@ -378,117 +251,269 @@ function wallReflections(t, k0 = 0) {
     r.root.rotation.order = 'YXZ'; r.root.rotation.x = 0; r.walk(t * 6 + k, 0.5); r.setFace('blank');
   });
 }
-shot(42.5, 46, (lt, t) => {
+
+// ---------------- plans (calés sur la voix-off) ----------------
+const SHOTS = []; const shot = (t0, t1, fn) => SHOTS.push({ t0, t1, fn });
+
+// scène de vitrine : un personnage lève les yeux, son reflet se désynchronise
+function vitrineScene(lt, t, v, M, Rf, e, { walkIn = false, leave = 0 } = {}) {
+  placeInVitrine(v, M, Rf);
+  const up = smooth(range(t, e.look - 0.3, e.look + 0.3));
+  M.headG.rotation.x = lerp(0.55, -0.6, up);
+  M.setFace(t > e.crack ? 'scared' : 'neutral');
+  mirrorPose(M, Rf); Rf.setFace('neutral');
+  if (t > e.change) { const d = smooth(range(t, e.change, e.change + 0.6)); Rf.headG.rotation.x = lerp(-0.6, 0.5, d); Rf.setFace(t > e.smile ? 'smile' : 'neutral'); }
+  if (leave > 0) { // il s'éloigne… le reflet reste
+    const sx = -v.side; M.root.position.z -= leave * 3.5; M.root.rotation.y = Math.PI; M.walk(t * 7, 0.55); M.headG.rotation.x = 0.4;
+  }
+  shards(t, e.crack, V3(v.x - v.side * 0.6, 2.2, v.z));
+  if (t > e.hum && t < e.hum + 1.4) { OV.vignette = 0.85; shake(0.025, t); }
+  comic('CRRRK', 330, 760, t - e.crack, { size: 96, color: SILVER, rot: -0.1, dur: 0.8 });
+  comic('BZZZMMM', 330, 1460, t - e.hum, { size: 84, color: '#8fa8ff', rot: 0.06, dur: 1.2, burst: false });
+  if (t > e.crack && t < e.crack + 0.1) OV.flash = 0.45;
+  fill.position.set(v.x - v.side * 1.2, 3, v.z + 2.5); fill.intensity = 22; fill.color.set('#cfe0ff');
+  shadowAt(v.x, 0, v.z, 10, [0.4, 1, 0.5]);
+}
+const vitCam = (v, lt, t1, far = 6.2) => { const sx = -v.side; camKeys(lt, [[0, [v.x + sx * 3.4, 2.1, v.z + far], [v.x - sx * 0.2, 2.0, v.z - 0.6], 42], [t1, [v.x + sx * 3.0, 2.1, v.z + far - 1.2], [v.x - sx * 0.3, 2.0, v.z - 0.6], 38]]); };
+
+// HOOK + la règle : « personne n'a le droit de regarder le ciel après minuit »
+shot(0, 11.95, (lt, t) => {
+  setMode('night'); const v = vitrine(-1, -2);
+  const e = { look: EV.ruleLook, crack: EV.ruleCrack, change: EV.ruleChange, smile: EV.ruleChange + 0.8, hum: EV.ruleHum };
+  const leave = range(t, EV.ruleStop - 0.6, 11.95);
+  vitrineScene(lt, t, v, C.p1, C.rP1, e, { leave });
+  if (t < EV.ruleLook - 0.3) { C.p1.headG.rotation.x = 0.55; }
+  if (t > EV.ruleStop - 0.6) { C.rP1.headG.rotation.x = 0.5; C.rP1.setFace('smile'); }
+  if (lt < 3.8) camKeys(lt, [[0, [v.x + 5.5, 6.5, v.z + 12], [v.x, 1.6, v.z], 48], [3.8, [v.x + 3.6, 2.4, v.z + 6.8], [v.x - 0.2, 2.0, v.z - 0.6], 42]]);
+  else vitCam(v, lt - 3.8, 8.15);
+  OV.hook = { text: 'NE REGARDE JAMAIS LE CIEL\nAPRÈS MINUIT.', age: lt - 0.05, dur: 3.6 };
+  OV.vignette = Math.max(OV.vignette, 0.7);
+  if (t > EV.ruleStop) comic('IL NE TE SUIT PLUS', 500, 520, t - EV.ruleStop, { size: 66, color: SILVER, rot: -0.04, dur: 1.2, burst: false });
+});
+// « tout le monde garde la tête baissée… en fixant ses chaussures »
+shot(11.95, 17.4, (lt, t) => {
+  if (lt < 2.2) {
+    setMode('dusk'); shadowAt(0, 0, -20, 60, [-0.4, 1, 0.6]);
+    camKeys(lt, [[0, [70, 120, 110], [0, 10, -40], 44], [2.2, [30, 60, 70], [0, 20, -60], 48]], (u) => u);
+  } else {
+    setMode('dusk'); shadowAt(0, 0, -6, 18, [-0.4, 1, 0.6]);
+    const crowd = [[C.boulanger, -2.6, -10, 0, 1.0], [C.p2, 2.4, 2, Math.PI, 1.1], [C.kid, -0.8, -4, 0, 1.2], [C.veilleur, 1.2, -14, 0, 0.9], [C.p1, -3.2, 4, Math.PI, 1.0]];
+    for (const [c, x, z, h, sp] of crowd) { c.at(x, 0, z + Math.cos(h) * lt * sp, h).walk(lt * 6 + x, 0.5); headDown(c, 1.2); }
+    camKeys(lt, [[2.2, [0, 9, 14], [0, 0.5, -6], 44], [5.45, [0, 6.5, 10], [0, 0.8, -6], 44]]);
+    comic('TÊTE BAISSÉE.', 500, 520, lt - 2.6, { size: 80, color: '#ffffff', rot: -0.04, dur: 2.6, burst: false });
+  }
+  OV.vignette = 0.6;
+});
+// « Moi, c'est Soren… le livreur de nuit »
+shot(17.4, 20.8, (lt, t) => {
+  setMode('night');
+  const S = C.soren; const z = 2 + lt * 1.3; S.at(0.8, 0, z, 0).walk(lt * 7, 0.55); headDown(S);
+  S.armR.rotation.x = -0.9; S.root.updateMatrixWorld(true);
+  R.parcel.visible = true; R.parcel.position.copy(S.armR.localToWorld(V3(0, -0.8, 0.35)));
+  shadowAt(0.8, 0, z, 10, [-0.4, 1, 0.6]);
+  camKeys(lt, [[0, [2.4, 2.4, z + 5.5], [0.6, 1.6, z], 44], [3.4, [1.8, 2.2, z + 4.6], [0.7, 1.7, z], 40]]);
+  fill.position.set(2, 3.5, z + 3); fill.intensity = 14; fill.color.set('#ffd9a0');
+  tag('SOREN', HEAD(S), lt - 0.2, 2.8, '#ffffff', '#23262f');
+  OV.vignette = 0.7;
+});
+// « Un regard en l'air… mon reflet s'arrête ; un autre… il me sourit depuis la vitrine »
+shot(20.8, 28.3, (lt, t) => {
+  setMode('night'); const v = vitrine(1, -24);
+  const e = { look: EV.sorenLook, crack: EV.sorenCrack, change: EV.sorenStop, smile: EV.sorenSmile, hum: EV.sorenHum };
+  vitrineScene(lt, t, v, C.soren, C.rSoren, e);
+  if (t > EV.sorenHum) { C.soren.headG.rotation.x = 0.5; C.soren.setFace('scared'); } // il rebaisse la tête… le reflet, non
+  if (t > EV.sorenSmile) { C.rSoren.headG.rotation.x = -0.1; C.rSoren.headG.rotation.y = 0.25; }
+  vitCam(v, lt, 7.5);
+  if (t > EV.sorenSmile - 0.4) camKeys(lt, [[EV.sorenSmile - 0.4 - 20.8, [v.x - 1.8, 2.3, v.z + 2.2], [v.x + 0.6, 2.4, v.z], 36], [7.5, [v.x - 1.4, 2.35, v.z + 1.6], [v.x + 0.6, 2.4, v.z], 30]]);
+  OV.vignette = 0.75;
+});
+// « les reflets qui s'échappent montent vers la grande tour de verre »
+shot(28.3, 34.4, (lt, t) => {
+  setMode('night'); shadowAt(0, 30, -85, 40, [-0.4, 1, 0.6]); gearsAt(t, 0.3);
+  C.doubles.slice(8, 14).forEach((r, k) => { const x = -8 + (k % 5) * 4, y = 4 + frac(t * 0.08 + hash(k)) * 70; r.at(TOWER.x + x, y, TOWER.z + 12.6, Math.PI); r.climb(t * 7 + k); r.setFace('blank'); });
+  camKeys(lt, [[0, [2, 1.8, 10], [0, 20, -90], 50], [6.1, [1.5, 3.5, -30], [0, 90, -96], 54]]);
+  comic("L'ATELIER RACONTE…", 500, 520, lt - 0.3, { size: 60, color: SILVER, rot: -0.04, dur: 2.4, burst: false });
+  OV.vignette = 0.75;
+});
+// « des gens perdent leur reflet même sans lever les yeux : le boulanger, le gardien de nuit, Maya »
+shot(34.4, 38.4, (lt, t) => {
+  setMode('night'); shadowAt(0, 0, -6, 25, [-0.4, 1, 0.6]);
+  wallReflections(t * 0.6);
+  camKeys(lt, [[0, [0, 1.8, 14], [-5, 2.2, -6], 48], [4, [0, 1.8, 8], [5, 2.2, -14], 48]]);
+  comic('SANS LEVER LES YEUX ?!', 500, 520, lt - 1.2, { size: 64, color: SILVER, rot: -0.04, dur: 2.6, burst: false });
+  OV.vignette = 0.75;
+});
+shot(38.4, 42.25, (lt, t) => {
+  if (t < EV.lostMaya) {
+    setMode('night');
+    const who = t < EV.lostVeil ? [C.boulanger, C.rBoul, vitrine(-1, 10), 'LE BOULANGER'] : [C.veilleur, C.rVeil, vitrine(1, -13), 'LE GARDIEN DE NUIT'];
+    const [M, Rf, v, name] = who; placeInVitrine(v, M, Rf); Rf.root.visible = false; M.setFace('scared'); M.headG.rotation.x = 0.35;
+    const sx = -v.side; look([v.x + sx * 3.0, 2.1, v.z + 5.0], [v.x - sx * 0.3, 2.0, v.z - 0.6], 38);
+    fill.position.set(v.x + sx * 1.2, 3, v.z + 2.5); fill.intensity = 18; fill.color.set('#cfe0ff'); shadowAt(v.x, 0, v.z, 10);
+    tag(name, HEAD(M), 0.5, 2, '#ffffff', '#3a4c88');
+    comic('PLUS DE REFLET', 500, 520, 0.5, { size: 70, color: SILVER, rot: -0.04, dur: 2, burst: false });
+  } else {
+    setMode('corridor'); const M = C.maya; M.at(200, 0, 3.5, Math.PI * 0.85); M.setFace('happy'); C.rMaya.root.visible = false;
+    CO.light.intensity = 18; CO.lightR.intensity = 10; cracks(0);
+    look(CP(1.2, 1.5, 7.0), CP(0, 1.0, 3.5), 44);
+    tag('MAYA', HEAD(M), t - EV.lostMaya - 0.1, 1.4, '#0b0d18', '#ff7aa8');
+  }
+  OV.vignette = 0.75;
+});
+// « Hier, Maya a croisé un miroir dans le couloir : son reflet est resté planté là… la maison s'assombrissait »
+shot(42.25, 49.0, (lt, t) => {
+  setMode('corridor');
+  const M = C.maya, Rf = C.rMaya;
+  const zM = t < EV.mayaLeave ? lerp(5.5, 2.2, smooth(range(lt, 0, 2.0))) : lerp(2.2, 7.4, smooth(range(t, EV.mayaLeave + 0.4, EV.mayaLeave + 3.4)));
+  M.at(200, 0, zM, t < EV.mayaLeave + 0.3 ? Math.PI : 0);
+  if (lt < 2.0 || (t > EV.mayaLeave + 0.4 && t < EV.mayaLeave + 3.4)) M.walk(t * 7, 0.5);
+  M.setFace(t < EV.mayaLeave ? 'neutral' : 'scared');
+  if (t < EV.mayaLeave) { mirrorPose(M, Rf); Rf.at(200, 0, -zM, 0); Rf.setFace('neutral'); }
+  else { Rf.at(200, 0, -2.2, 0); Rf.setFace(t > EV.mayaLeave + 1.5 ? 'smile' : 'neutral'); } // le reflet reste planté devant le miroir
+  const dark = range(t, EV.mayaLeave, 48.6);
+  CO.light.intensity = lerp(18, 2.5, dark); CO.lightR.intensity = lerp(10, 6, dark);
+  OV.vignette = lerp(0.6, 0.9, dark);
+  if (t < EV.mayaLeave) camKeys(lt, [[0, CP(0.6, 2.2, 8.6), CP(0, 1.5, 0), 46], [2.75, CP(0.5, 1.7, 5.6), CP(0, 1.4, 0), 42]]);
+  else camKeys(lt, [[EV.mayaLeave - 42.25, CP(1.4, 1.5, 4.2), CP(-0.2, 1.3, -1.6), 42], [6.75, CP(0.9, 1.4, 3.2), CP(-0.1, 1.3, -2.2), 34]]);
+  comic('IL EST RESTÉ LÀ', 500, 520, t - EV.mayaLeave - 1.2, { size: 70, color: SILVER, rot: -0.04, dur: 2.4, burst: false });
+});
+// « Pourtant, la nuit, personne n'est censé sortir. »
+shot(49.0, 52.1, (lt, t) => {
+  setMode('night'); shadowAt(0, 0, -10, 40, [-0.4, 1, 0.6]);
+  camKeys(lt, [[0, [0, 14, 26], [0, 6, -40], 48], [3.1, [0, 10, 20], [0, 10, -60], 48]]);
+  comic('Z z z', 760, 760, lt - 0.3, { size: 80, color: '#cfe8ff', rot: 0.1, dur: 2.6, burst: false });
+  OV.vignette = 0.75; OV.fade = Math.max(OV.fade, 1 - range(lt, 0, 0.4));
+});
+// « Mercredi soir, je n'ai pas dormi. »
+shot(52.1, 54.25, (lt, t) => {
+  setMode('night'); shadowAt(-3, 0, 4, 14, [-0.4, 1, 0.6]);
+  const S = C.soren; S.at(-3.6, 0, 4, Math.PI * 0.9); S.sneak(lt * 5); S.setFace('determined'); S.headG.rotation.x = -0.5;
+  look([-1.6, 1.6, 7.8], [-3.4, 4, -10], 52);
+  fill.position.set(-2.5, 3, 6); fill.intensity = 12; fill.color.set('#9fb6ff');
+  OV.title = { text: 'MERCREDI SOIR', age: lt, sub: '23 H 59' }; OV.vignette = 0.75;
+});
+// « des dizaines de reflets glisser le long des murs et monter vers la tour »
+shot(54.25, 59.45, (lt, t) => {
   setMode('night'); shadowAt(0, 0, -10, 30, [-0.4, 1, 0.6]);
   wallReflections(t);
-  camKeys(lt, [[0, [0, 1.6, 16], [0, 6, -40], 52], [3.5, [0, 2.6, 8], [0, 14, -60], 52]]);
-  comic('LES REFLETS SORTENT', 500, 520, lt - 0.4, { size: 66, color: SILVER, rot: -0.04, dur: 2.8, burst: false });
+  camKeys(lt, [[0, [0, 1.6, 16], [0, 6, -40], 52], [5.2, [0, 2.8, 6], [0, 16, -60], 52]]);
+  OV.title = lt < 1.6 ? { text: 'MINUIT', age: lt, sub: null } : null;
   OV.vignette = 0.75;
 });
-// ils montent sur la tour et actionnent les mécanismes
-shot(46, 49, (lt, t) => {
-  setMode('night'); shadowAt(0, 30, -85, 40, [-0.4, 1, 0.6]);
-  gearsAt(t, 1.2);
-  C.doubles.slice(8, 18).forEach((r, k) => { const x = -8 + (k % 5) * 4, y = 8 + frac(t * 0.12 + hash(k)) * 50; r.at(TOWER.x + x, y, TOWER.z + 12.6, 0); r.climb(t * 7 + k); r.setFace('blank'); });
-  camKeys(lt, [[0, [2.5, 4, -48], [0, 22, -84], 52], [3, [2, 12, -56], [0, 44, -84], 50]]);
-  comic('CLAC… CLAC…', 500, 1480, lt - 0.3, { size: 70, color: SILVER, rot: 0.04, dur: 2.4, burst: false });
+// « ils actionnaient de grands leviers qui déplaçaient les ombres de toute la ville »
+shot(59.45, 63.3, (lt, t) => {
+  setMode('night'); shadowAt(0, 30, -85, 40, [Math.sin(t * 0.8) * 0.8, 1, 0.6]);
+  gearsAt(t, 1.4);
+  C.doubles.slice(8, 18).forEach((r, k) => { const x = -8 + (k % 5) * 4, y = 8 + frac(t * 0.12 + hash(k)) * 50; r.at(TOWER.x + x, y, TOWER.z + 12.6, Math.PI); r.climb(t * 7 + k); r.setFace('blank'); });
+  camKeys(lt, [[0, [2.5, 4, -48], [0, 22, -84], 52], [3.85, [2, 12, -56], [0, 44, -84], 50]]);
+  comic('CLAC… CLAC…', 500, 1460, lt - 0.3, { size: 70, color: SILVER, rot: 0.04, dur: 2.6, burst: false });
   OV.vignette = 0.75;
 });
-// Soren grimpe jusqu'au sommet
-shot(49, 52, (lt, t) => {
-  setMode('night'); gearsAt(t, 1.2);
-  const S = C.soren; const y = 2 + smooth(range(lt, 0, 3)) * 40; S.at(TOWER.x + 7, y, TOWER.z + 12.6, Math.PI); S.climb(t * 9); S.setFace('determined');
+// « J'ai grimpé jusqu'en haut. »
+shot(63.3, 64.7, (lt, t) => {
+  setMode('night'); gearsAt(t, 1.4);
+  const S = C.soren; const y = 6 + smooth(range(lt, 0, 1.4)) * 50; S.at(TOWER.x + 7, y, TOWER.z + 12.6, Math.PI); S.climb(t * 11); S.setFace('determined');
   shadowAt(TOWER.x, y, TOWER.z + 12, 20, [-0.4, 1, 0.6]);
   look([TOWER.x + 16, y + 2, TOWER.z + 30], [TOWER.x + 6, y + 4, TOWER.z + 12], 50);
   rim.position.set(TOWER.x + 10, y + 4, TOWER.z + 18); rim.intensity = 30;
 });
-// la salle : les écrans des habitants
-shot(52, 58.4, (lt, t) => {
+// « des écrans affichaient chaque habitant… Maya, isolée ; le boulanger, perdu »
+shot(64.7, 71.75, (lt, t) => {
   setMode('room'); bigHot(false);
   const S = C.soren;
-  if (lt < 1.6) { const u = range(lt, 0, 1.6); S.at(400, 0, lerp(8, 3, u), Math.PI); S.walk(lt * 7, 0.5); }
-  else { S.at(400, 0, 3, Math.PI); S.headG.rotation.y = Math.sin((lt - 1.6) * 1.1) * 0.5; }
+  if (lt < 1.4) { const u = range(lt, 0, 1.4); S.at(400, 0, lerp(8, 3, u), Math.PI); S.walk(lt * 7, 0.5); }
+  else { S.at(400, 0, 3, Math.PI); S.headG.rotation.y = Math.sin((lt - 1.4) * 1.1) * 0.5; }
   S.setFace('surprised');
-  for (let k = 0; k < I.cards.length; k++) cardHot(k, k === 2 && lt > 3.6);
-  if (lt < 1.6) look(RP(1.5, 2.6, -2.5), RP(0, 2.0, 7), 54);
-  else camKeys(lt, [[1.6, RP(-3.5, 3.4, 2.5), RP(-4.1, 3.4, -7), 52], [3.4, RP(3.5, 3.4, 2.5), RP(4.1, 3.4, -7), 52], [4.2, RP(0, 3.6, 0.8), RP(0, 4.0, -7), 44], [6.4, RP(0, 3.8, 0.2), RP(0, 4.0, -7), 40]]);
+  for (let k = 0; k < I.cards.length; k++) cardHot(k, (k === 2 && t > EV.mayaCard && t < EV.boulCard) || (k === 0 && t > EV.boulCard));
+  const c2 = I.cards[2].mesh.position, c0 = I.cards[0].mesh.position;
+  if (lt < 1.4) look(RP(1.5, 2.6, -2.5), RP(0, 2.0, 7), 54);
+  else if (t < EV.mayaCard) camKeys(lt, [[1.4, RP(-3.5, 3.4, 2.5), RP(-4.1, 3.4, -7), 52], [3.75, RP(3.5, 3.4, 2.5), RP(4.1, 3.4, -7), 52]]);
+  else if (t < EV.boulCard) camKeys(t - EV.mayaCard, [[0, RP(c2.x + 0.3, 4.2, 0.8), RP(c2.x, 3.3, -7), 42], [2.2, RP(c2.x + 0.3, 4.1, -0.6), RP(c2.x, 3.3, -7), 38]]);
+  else camKeys(t - EV.boulCard, [[0, RP(c0.x - 0.3, 4.2, 0.8), RP(c0.x, 3.3, -7), 42], [1.1, RP(c0.x - 0.3, 4.1, 0.0), RP(c0.x, 3.3, -7), 38]]);
 });
-// SOREN : REFLET DE REMPLACEMENT
-shot(58.4, 62.5, (lt, t) => {
+// « Et tout en haut, en rouge : Soren, reflet de remplacement. »
+shot(71.75, 75.6, (lt, t) => {
   setMode('room'); for (let k = 0; k < I.cards.length; k++) cardHot(k, false);
   const on = t > EV.bigScreen; bigHot(on && frac(t * 3) < 0.5);
   I.lights[1].intensity = on ? 20 + 50 * (frac(t * 3) < 0.5 ? 1 : 0) : 20;
   const S = C.soren; S.at(400, 0, 3, Math.PI);
-  if (lt < 2.4) { camKeys(lt, [[0, RP(0, 3.8, 1.5), RP(0, 4.6, -7), 50], [1.0, RP(0, 5.2, 2.0), RP(0, 6.5, -7), 48], [2.4, RP(0, 5.6, 0.6), RP(0, 6.6, -7), 44]]); S.setFace('surprised'); }
-  else { S.setFace('scared'); S.headG.rotation.x = -0.2; camKeys(lt, [[2.4, RP(0.3, 2.2, 0.4), RP(0, 2.0, 3), 50], [4.1, RP(0.25, 2.15, 0.9), RP(0, 2.0, 3), 46]]); fill.position.set(400, 5, 0); fill.intensity = 25 + 25 * (frac(t * 3) < 0.5 ? 1 : 0); fill.color.set('#ff3b4e'); }
+  if (lt < 2.5) { camKeys(lt, [[0, RP(0, 3.8, 1.5), RP(0, 4.6, -7), 50], [1.0, RP(0, 5.2, 2.0), RP(0, 6.5, -7), 48], [2.5, RP(0, 5.6, 0.6), RP(0, 6.6, -7), 44]]); S.setFace('surprised'); }
+  else { S.setFace('scared'); S.headG.rotation.x = -0.2; camKeys(lt, [[2.5, RP(0.3, 2.2, 0.4), RP(0, 2.0, 3), 50], [3.85, RP(0.25, 2.15, 0.9), RP(0, 2.0, 3), 46]]); fill.position.set(400, 5, 0); fill.intensity = 25 + 25 * (frac(t * 3) < 0.5 ? 1 : 0); fill.color.set('#ff3b4e'); }
 });
-// la photo
-shot(62.5, 65.6, (lt, t) => {
+// « J'ai pris une photo… »
+shot(75.6, 79.7, (lt, t) => {
   setMode('room'); bigHot(false);
   const S = C.soren; S.at(399.5, 0, 3, Math.PI);
-  const raise = smooth(range(lt, 0, 0.5)); S.armR.rotation.x = -1.75 * raise; S.armL.rotation.x = -1.55 * raise; S.armL.rotation.z = 0.35 * raise; S.setFace('determined');
+  const raise = smooth(range(lt, 0, 0.5)); S.armR.rotation.x = -1.75 * raise; S.armL.rotation.x = -1.55 * raise; S.armL.rotation.z = 0.35 * raise; S.setFace(t < 77.6 ? 'determined' : 'happy');
   S.root.updateMatrixWorld(true);
   I.phone.visible = true; I.phone.position.copy(S.armR.localToWorld(V3(-0.25, -0.95, 0.1))); I.phone.quaternion.copy(S.root.quaternion); I.phone.rotateY(Math.PI); I.phone.rotateX(-0.2);
   I.phoneScreen.material.emissiveIntensity = t > EV.photo ? 2.5 : 1.0;
-  camKeys(lt, [[0, RP(-1.7, 3.0, 5.8), RP(0, 4.6, -7), 52], [3.1, RP(-1.5, 2.9, 5.2), RP(0, 4.8, -7), 50]]);
+  if (t < 77.6) camKeys(lt, [[0, RP(-1.7, 3.0, 5.8), RP(0, 4.6, -7), 52], [2.0, RP(-1.5, 2.9, 5.2), RP(0, 4.8, -7), 50]]);
+  else camKeys(lt, [[2.0, RP(-0.6, 2.2, 0.2), RP(-0.5, 2.0, 3), 52], [4.1, RP(-0.55, 2.15, 0.7), RP(-0.5, 2.0, 3), 48]]);
   OV.flash = t > EV.photo ? 1 - range(t, EV.photo, EV.photo + 0.35) : 0;
   comic('CLIC', 760, 520, t - EV.photo, { size: 100, color: '#ffffff', rot: 0.1, dur: 0.8 });
 });
-// la porte se verrouille
-shot(65.6, 69.5, (lt, t) => {
+// « Mais derrière moi, clac, la porte s'est verrouillée. »
+shot(79.7, 82.85, (lt, t) => {
   setMode('room'); bigHot(false);
   const locked = t > EV.doorLock; I.bolt.position.x = locked ? lerp(1.6, 0.6, easeOut(range(t, EV.doorLock, EV.doorLock + 0.15))) : 1.6;
   I.lockLight.material.color.set(locked ? '#ff2b3d' : '#3dff8a'); I.lockLight.material.emissive.set(locked ? '#ff2b3d' : '#3dff8a');
-  const S = C.soren; const ts = EV.doorLock - 65.6;
-  if (lt < ts + 0.3) { S.at(399.5, 0, 3, Math.PI); S.setFace('happy'); }
-  else if (lt < ts + 0.7) { S.at(399.5, 0, 3, Math.PI + Math.PI * smooth(range(lt, ts + 0.3, ts + 0.7))); S.setFace('surprised'); }
-  else { const u = range(lt, ts + 0.7, 3.2); S.at(399.7, 0, lerp(3, 6.1, u), 0); if (u < 1) S.walk(lt * 12, 0.8); else { const b = Math.abs(Math.sin(lt * 11)); S.armL.rotation.x = -1.6 - b * 0.6; S.armR.rotation.x = -1.6 - (1 - b) * 0.6; } S.setFace('scared'); }
+  const S = C.soren; const ts = EV.doorLock - 79.7;
+  if (lt < ts + 0.2) { S.at(399.5, 0, 3, Math.PI); S.setFace('happy'); }
+  else if (lt < ts + 0.6) { S.at(399.5, 0, 3, Math.PI + Math.PI * smooth(range(lt, ts + 0.2, ts + 0.6))); S.setFace('surprised'); }
+  else { const u = range(lt, ts + 0.6, 3.1); S.at(399.7, 0, lerp(3, 6.1, u), 0); if (u < 1) S.walk(lt * 12, 0.8); S.setFace('scared'); }
   fill.position.set(400, 4, 4.5); fill.intensity = 30; fill.color.set(locked ? '#ff6070' : '#9fb6ff');
-  camKeys(lt, [[0, RP(3.2, 2.7, 0.2), RP(-0.2, 2.3, 6.8), 52], [3.9, RP(2.6, 2.5, 2.6), RP(-0.2, 2.2, 6.8), 46]]);
+  camKeys(lt, [[0, RP(3.2, 2.7, 0.2), RP(-0.2, 2.3, 6.8), 52], [3.15, RP(2.6, 2.5, 2.6), RP(-0.2, 2.2, 6.8), 46]]);
   comic('CLAC !', 500, 600, t - EV.doorLock, { size: 150, color: RED, rot: -0.1, dur: 1.0 });
 });
-// le Gardien de la Tour
-shot(69.5, 75, (lt, t) => {
+// « Le gardien de la tour s'est retourné en souriant : « Un reflet ne retourne jamais à sa place. » »
+shot(82.85, 87.8, (lt, t) => {
   setMode('room'); bigHot(false);
-  const G = C.gardien; const appear = smooth(range(t, EV.guardian, EV.guardian + 1.2));
-  G.at(400, 0, -5.3, 0); G.setFace(t < EV.guardian + 2.5 ? 'smirk' : 'evil');
-  G.root.position.y = 0; G.armR.rotation.x = t > EV.lever - 0.4 ? -1.2 : -0.5; G.armL.rotation.x = -0.4;
-  I.levers[1].rotation.x = t > EV.lever ? lerp(-0.5, 0.6, smooth(range(t, EV.lever, EV.lever + 0.4))) : -0.5;
-  rim.position.set(400, 3.5, -2); rim.intensity = 30 * appear; rim.color.set('#9fb6ff');
-  I.lights[0].intensity = lerp(50, 18, appear);
+  const G = C.gardien; const turn = smooth(range(t, EV.guardianTurn, EV.guardianTurn + 0.9));
+  G.at(400, 0, -5.3, Math.PI * (1 - turn)); G.setFace(t < 85.1 ? 'smirk' : 'evil');
+  G.armR.rotation.x = -0.5; G.armL.rotation.x = -0.4;
+  rim.position.set(400, 3.5, -2); rim.intensity = 30; rim.color.set('#9fb6ff');
+  I.lights[0].intensity = 20;
   const S = C.soren; S.at(400.3, 0, 5.9, Math.PI); S.setFace('scared');
-  camKeys(lt, [[0, RP(0.6, 3.0, 4.6), RP(0, 2.6, -5.3), 46], [2.6, RP(0.4, 3.1, 0.6), RP(0, 3.0, -5.3), 38], [5.5, RP(0.3, 3.2, -1.6), RP(0, 3.4, -5.3), 32]]);
+  camKeys(lt, [[0, RP(0.6, 3.0, 3.6), RP(0, 2.8, -5.3), 44], [2.2, RP(0.4, 3.1, 0.4), RP(0, 3.0, -5.3), 38], [4.95, RP(0.3, 3.2, -1.8), RP(0, 3.4, -5.3), 32]]);
   G.root.updateMatrixWorld(true);
-  sparkle(G.glasses.getWorldPosition(V3()), t - (EV.guardian + 1.6), 110);
-  tag('LE GARDIEN', HEAD(G), t - EV.guardian - 0.8, 1.8, '#ffffff', '#191923');
-  comic('CLONK', 500, 1500, t - EV.lever, { size: 90, color: SILVER, rot: 0.06, dur: 0.8 });
+  sparkle(G.glasses.getWorldPosition(V3()), t - (EV.guardianTurn + 1.0), 110);
+  sparkle(G.glasses.getWorldPosition(V3()), t - 86.4, 90);
+  tag('LE GARDIEN DE LA TOUR', HEAD(G), t - EV.guardianTurn - 0.6, 1.6, '#ffffff', '#191923');
   OV.vignette = 0.75;
 });
-// la salle tremble
-shot(75, 78, (lt, t) => {
+// « Et la pièce entière s'est mise à trembler. » (le levier)
+shot(87.8, 90.09, (lt, t) => {
   setMode('room'); bigHot(frac(t * 4) < 0.5);
+  I.levers[1].rotation.x = lerp(-0.5, 0.6, smooth(range(lt, 0, 0.3)));
   const S = C.soren; S.at(400 + Math.sin(lt * 5) * 0.3, 0, 3.5, Math.PI + 0.4); S.setFace('scared');
   S.armL.rotation.z = -1.3 + Math.sin(lt * 9) * 0.3; S.armR.rotation.z = 1.3 + Math.sin(lt * 8) * 0.3; S.root.rotation.z = Math.sin(lt * 6) * 0.15;
-  C.gardien.at(400, 0, -5.3, 0); C.gardien.setFace('evil');
+  C.gardien.at(400, 0, -5.3, 0); C.gardien.setFace('evil'); C.gardien.armR.rotation.x = -1.2;
   for (const l of I.lights) l.intensity *= frac(t * 7) < 0.3 ? 0.3 : 1;
   look(RP(-5.2, 4.6, 5.4), RP(0.5, 2.6, -2), 58); shake(0.13, t);
-  comic('VRRRMMM', 500, 600, lt - 0.2, { size: 110, color: SILVER, rot: -0.08, dur: 2.2 });
+  comic('VRRRMMM', 500, 600, lt - 0.1, { size: 110, color: SILVER, rot: -0.08, dur: 2.0 });
 });
-// la salle est suspendue dans le vide… entourée de dizaines de doubles de Soren
-shot(78, DURATION, (lt, t) => {
+// « Ce n'était pas le sommet de la tour : la salle était suspendue dans le vide, et les vitres… des dizaines de Soren »
+shot(90.09, DURATION, (lt, t) => {
   setMode('room'); bigHot(false);
   const S = C.soren; S.at(400, 0, 1.5, Math.PI * 0.85); S.setFace('scared'); S.headG.rotation.y = Math.sin(lt * 0.9) * 0.5;
   C.gardien.at(400, 0, -5.3, 0); C.gardien.setFace('evil');
   C.doubles.forEach((d, k) => {
     const a = (k / C.doubles.length) * Math.PI * 2 + hash(k) * 0.2, r = 10.5 + hash(k + 1) * 11, y = -4 + hash(k + 2) * 12;
     const x = 400 + Math.cos(a) * r, z = Math.sin(a) * r;
-    d.at(x, y, z, Math.atan2(400 - x, 0 - z)); d.setFace(lt > 2.5 ? 'smile' : 'blank'); d.headG.rotation.x = clamp((y - 1) / r, -0.6, 0.6) * -0.8;
+    d.at(x, y, z, Math.atan2(400 - x, 0 - z)); d.setFace(t > EV.doublesStare + 0.8 ? 'smile' : 'blank'); d.headG.rotation.x = clamp((y - 1) / r, -0.6, 0.6) * -0.8;
   });
   I.group.position.y = Math.sin(t * 0.7) * 0.15; I.group.rotation.z = Math.sin(t * 0.9) * 0.012;
-  const u = easeOut(range(lt, 0, 5.5));
-  look(RP(lerp(1.5, 22, u), lerp(3, 7, u), lerp(3, 27, u)), RP(0, 3, -1), lerp(48, 56, u));
   rim.position.set(400, 6, 14); rim.intensity = 60; rim.distance = 60; rim.color.set('#9fb6ff');
-  OV.vignette = 0.85; OV.flash = 0.6 * (1 - range(lt, 0, 0.3));
+  if (t < EV.doublesStare) { const u = easeOut(range(t, EV.reveal, EV.doublesStare)); look(RP(lerp(1.5, 22, u), lerp(3, 7, u), lerp(3, 27, u)), RP(0, 3, -1), lerp(48, 56, u)); }
+  else { // à l'intérieur : la vitre, et derrière, tous les Soren qui le regardent
+    const u = smooth(range(t, EV.doublesStare, 97.4)); const a = lerp(-2.3, -0.9, u);
+    const dx = Math.sin(a), dz = Math.cos(a);
+    S.at(400 + dx * 1.0, 0, dz * 1.0, a); S.setFace('scared');
+    look(RP(dx * -1.6 + dz * 0.9, 2.9, dz * -1.6 - dx * 0.9), RP(dx * 20, 2.6, dz * 20), 60);
+    fill.position.set(400, 8, 0); fill.intensity = 80; fill.distance = 50; fill.color.set('#bcd0ff');
+  }
+  OV.vignette = 0.85; OV.flash = Math.max(OV.flash, 0.6 * (1 - range(lt, 0, 0.3)));
   if (t > EV.endTitle) OV.title = { text: 'À SUIVRE...', age: t - EV.endTitle, sub: 'LA TOUR DES REFLETS — ÉP. 1' };
   OV.fade = range(t, DURATION - 0.9, DURATION - 0.1);
 });
@@ -500,7 +525,7 @@ function renderFrame(t) {
   for (const c of allChars) { c.reset(); c.visible = true; }
   R.parcel.visible = false; R.shards.visible = false; I.phone.visible = false; I.group.position.y = 0; I.group.rotation.z = 0;
   for (const l of I.lights) l.intensity = l.userData.base ??= l.intensity;
-  fill.color.set("#ffffff"); rim.distance = 30;
+  fill.color.set("#ffffff"); rim.distance = 30; fill.distance = 30;
   const sh = SHOTS.find((s) => t >= s.t0 && t < s.t1) || SHOTS[SHOTS.length - 1];
   sh.fn(t - sh.t0, t);
   R.beacon.material.emissiveIntensity = 1 + Math.sin(t * 4) * 0.8;
