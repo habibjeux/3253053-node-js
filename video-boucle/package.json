@@ -1,0 +1,18 @@
+{
+  "name": "boucle-montagnes-russes-video",
+  "version": "1.0.0",
+  "description": "Vid\u00e9o verticale 9:16 \u00ab La boucle \u00bb \u2014 animation 3D (Three.js) rendue image par image",
+  "scripts": {
+    "preview": "node render.mjs --preview",
+    "render": "node render.mjs",
+    "audio": "node audio.mjs"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/luckiest-guy": "^5.1.0",
+    "three": "^0.170.0",
+    "@fontsource/montserrat": "^5.1.0"
+  },
+  "type": "module"
+}
