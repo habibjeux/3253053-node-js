@@ -1,6 +1,10 @@
 // Mise en scène « La boucle » : parc d'attractions, duel de montagnes russes, explication physique.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { V3, clamp, lerp, smooth, easeOut, easeIn, easeOutBack, range, hash, FONT, redraw } from './lib.js';
 import { makeCast, makePark, makeDemo, setTrack, placeOnTrack, loopPoints, skyTex, frac } from './world.js';
 import { LINES, EV, WIDTH, HEIGHT, DURATION } from './timeline.js';
@@ -14,7 +18,7 @@ const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, pr
 renderer.setPixelRatio(1);
 renderer.setSize(Math.round(WIDTH * SCALE), Math.round(HEIGHT * SCALE), false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 const out = document.getElementById('out');
 out.width = Math.round(WIDTH * SCALE); out.height = Math.round(HEIGHT * SCALE);
 const ctx = out.getContext('2d');
@@ -30,20 +34,25 @@ scene.add(sun); scene.add(sun.target);
 const fill = new THREE.PointLight('#ffffff', 0, 30, 1.5); scene.add(fill);
 
 const C = makeCast();
-for (const c of [C.createur, C.rival, C.fille, C.pere, C.mere, C.dummy, ...C.queue]) scene.add(c.root);
+for (const c of [C.createur, C.rival, C.fille, C.pere, C.mere, C.dummy, ...C.queue]) c.addTo(scene);
 const R = makePark(scene);
 const D = makeDemo(scene);
-const SKY = { day: skyTex('#1e88ff', '#bfe6ff'), night: skyTex('#030716', '#1a2a5a') };
+const SKY = { day: skyTex('#1f6fe5', '#bfe2ff'), night: skyTex('#030716', '#1a2a5a') };
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(Math.round(WIDTH * SCALE), Math.round(HEIGHT * SCALE)), 0.2, 0.5, 0.96); composer.addPass(bloom);
+composer.addPass(new OutputPass());
 
 function setMode(m) {
-  const night = m === 'night';
-  R.group.visible = m !== 'demo'; D.visible = m === 'demo';
-  scene.background = SKY[night ? 'night' : 'day'];
-  R.stars.visible = night; R.moon.visible = night; for (const c of R.clouds) c.visible = !night;
-  scene.fog = new THREE.Fog(night ? '#0b1638' : '#cfe8ff', night ? 80 : 150, night ? 500 : 900);
-  scene.environmentIntensity = night ? 0.15 : 0.6;
-  if (night) { hemi.color.set('#4b6cc7'); hemi.groundColor.set('#102018'); hemi.intensity = 0.9; sun.color.set('#cfdcff'); sun.intensity = 1.4; for (const b of R.bulbs) b.material.emissiveIntensity = 2.5; renderer.toneMappingExposure = 1.2; }
-  else { hemi.color.set('#bfe3ff'); hemi.groundColor.set('#7cb342'); hemi.intensity = 1.2; sun.color.set('#fff3dc'); sun.intensity = 3.0; for (const b of R.bulbs) b.material.emissiveIntensity = 0.3; renderer.toneMappingExposure = 1.0; }
+  const night = m === 'night', demo = m === 'demo';
+  R.group.visible = !demo; D.visible = demo;
+  scene.background = demo ? SKY.day : null;
+  R.skyDay.visible = !night; R.skyNight.visible = night;
+  R.stars.visible = night; R.moon.visible = night; R.moonGlow.visible = night; for (const c of R.clouds) c.visible = !night;
+  scene.fog = new THREE.FogExp2(night ? '#0b1638' : '#bcdcff', night ? 0.004 : 0.0016);
+  scene.environmentIntensity = night ? 0.15 : 0.7;
+  if (night) { hemi.color.set('#4b6cc7'); hemi.groundColor.set('#102018'); hemi.intensity = 0.55; sun.color.set('#cfdcff'); sun.intensity = 1.0; for (const b of R.bulbs) b.material.emissiveIntensity = 4; renderer.toneMappingExposure = 1.15; bloom.strength = 0.45; bloom.threshold = 0.8; }
+  else { hemi.color.set('#bcd8ff'); hemi.groundColor.set('#5d7a3a'); hemi.intensity = 0.9; sun.color.set('#fff1dc'); sun.intensity = 3.6; for (const b of R.bulbs) b.material.emissiveIntensity = 0.3; renderer.toneMappingExposure = 1.0; bloom.strength = 0.18; bloom.threshold = 0.96; }
   fill.intensity = 0;
 }
 function shadowAt(x, y, z, size = 30, dir = [0.5, 1, 0.6]) {
@@ -480,7 +489,8 @@ function renderFrame(t) {
   const sh = SHOTS.find((s) => t >= s.t0 && t < s.t1) || SHOTS[SHOTS.length - 1];
   sh.fn(t - sh.t0, t);
   for (const w of EV.whooshes) { const a = t - w; if (a >= 0 && a < 0.15) OV.flash = Math.max(OV.flash, 0.4 * (1 - a / 0.15)); }
-  renderer.render(scene, camera);
+  for (const c of allChars) c.sync(camera);
+  composer.render();
   compose(t);
 }
 function drawDiagram(t) {

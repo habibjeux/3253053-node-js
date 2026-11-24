@@ -1,7 +1,7 @@
 // Décors : parc d'attractions, deux montagnes russes à boucle déformable, wagons, explosion, piste de démonstration.
 import * as THREE from 'three';
 import { box, mat, glow, plane, canvasTex, Character, FONT, hash, V3, addOutline } from './lib.js';
-import { StickCharacter } from './stick.js';
+import { FlatCharacter } from './flat.js';
 
 export const frac = (x) => x - Math.floor(x);
 const WHITE = '#f6f6f4';
@@ -9,16 +9,16 @@ const WHITE = '#f6f6f4';
 // ---------------- personnages ----------------
 export function makeCast() {
   const C = {};
-  C.createur = new StickCharacter({ shirt: '#ffd21f', overall: '#2f5fbf', cap: '#e53935', capVisor: '#c62828', scale: 1.15 });
-  C.rival = new StickCharacter({ shirt: '#ffffff', vest: '#d9c9a3', shirtFront: '#ffffff', tie: '#e0b100', slick: '#141418', scale: 1.2 });
-  C.fille = new StickCharacter({ shirt: '#ff6fae', dress: '#ff6fae', hair: '#5a3a1f', pigtails: '#5a3a1f', scale: 0.75 });
-  C.pere = new StickCharacter({ shirt: '#2ec4b6', cap: '#264653', scale: 1.1 });
-  C.mere = new StickCharacter({ shirt: '#ff9f1c', hair: '#8a4b2a', scale: 1.05 });
+  C.createur = new FlatCharacter({ body: 'overall', shirt: '#ffd21f', overall: '#3d6fd6', hair: 'cap', cap: '#e53935', scale: 1.0 });
+  C.rival = new FlatCharacter({ body: 'vest', vest: '#d8c7a0', tie: '#e8b400', hair: 'slick', scale: 1.05 });
+  C.fille = new FlatCharacter({ body: 'dress', shirt: '#ff6fae', hair: 'pigtails', hairColor: '#5a3a1f', scale: 0.7 });
+  C.pere = new FlatCharacter({ body: 'shirt', shirt: '#2ec4b6', hair: 'cap', cap: '#264653', scale: 1.0 });
+  C.mere = new FlatCharacter({ body: 'shirt', shirt: '#ff9f1c', hair: 'long', hairColor: '#8a4b2a', scale: 0.95 });
   C.queue = [];
   const cols = ['#e63946', '#457b9d', '#8ac926', '#ffca3a', '#6a4c93', '#f15bb5', '#00bbf9', '#fb5607'];
-  for (let k = 0; k < 10; k++) C.queue.push(new StickCharacter({ shirt: cols[k % 8], hair: k % 3 === 1 ? ['#2b1d14', '#d4a373', '#141418'][k % 3] : null, beanie: k % 3 === 0 ? cols[(k + 3) % 8] : null, cap: k % 3 === 2 ? cols[(k + 5) % 8] : null, scale: 0.95 + hash(k) * 0.25 }));
-  // mannequin de test (tête et torse jaunes)
-  C.dummy = new StickCharacter({ skin: '#ffd23f', shirt: '#ffd23f', scale: 1.05 });
+  for (let k = 0; k < 10; k++) C.queue.push(new FlatCharacter({ body: 'shirt', shirt: cols[k % 8], hair: ['beanie', 'long', 'cap', null][k % 4], cap: cols[(k + 3) % 8], hairColor: ['#2b1d14', '#d4a373', '#141418'][k % 3], scale: 0.85 + hash(k) * 0.25 }));
+  // mannequin de test : tout jaune, yeux en croix
+  C.dummy = new FlatCharacter({ body: 'shirt', shirt: '#ffd23f', skin: '#ffd23f', hand: '#ffd23f', scale: 1.0 });
   return C;
 }
 
@@ -59,15 +59,18 @@ const railMat = (color) => mat(color, { metalness: 0.4, roughness: 0.35 });
 export function buildTrack(points, color, supportColor) {
   const g = new THREE.Group();
   const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  const n = 600;
-  const frames = [];
+  const n = 700; const frames = [];
   for (let i = 0; i <= n; i++) { const u = i / n; const p = curve.getPointAt(u), T = curve.getTangentAt(u); const up = new THREE.Vector3(0, 0, 1).cross(T).normalize(); const side = T.clone().cross(up).normalize(); frames.push({ p, T, up, side }); }
-  const rail = (off, r) => { const pts = frames.map((f) => f.p.clone().addScaledVector(f.side, off.x).addScaledVector(f.up, off.y)); return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n, r, 6, false), railMat(color)); };
-  for (const m of [rail({ x: 0.75, y: 0 }, 0.16), rail({ x: -0.75, y: 0 }, 0.16), rail({ x: 0, y: -0.55 }, 0.24)]) { m.castShadow = true; g.add(m); }
-  const tieM = railMat('#555b66');
-  for (let i = 0; i < n; i += 6) { const f = frames[i]; const t = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.18, 0.3), tieM); t.position.copy(f.p).addScaledVector(f.up, -0.25); const m4 = new THREE.Matrix4().makeBasis(f.side, f.up, f.T); t.quaternion.setFromRotationMatrix(m4); g.add(t); }
-  const supM = railMat(supportColor);
-  for (let i = 0; i < n; i += 18) { const f = frames[i]; if (f.p.y < 3 || f.up.y < 0.2) continue; const h = f.p.y - 0.6; const s = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, h, 6), supM); s.position.set(f.p.x, h / 2, f.p.z); s.castShadow = true; g.add(s); }
+  const railM = new THREE.MeshStandardMaterial({ color, metalness: 0.1, roughness: 0.42, emissive: color, emissiveIntensity: 0.12 });
+  const rail = (sx, uy, r) => { const pts = frames.map((f) => f.p.clone().addScaledVector(f.side, sx).addScaledVector(f.up, uy)); const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n, r, 8, false), railM); m.castShadow = true; g.add(m); return pts; };
+  const Lr = rail(0.7, 0, 0.11), Rr = rail(-0.7, 0, 0.11), Sp = rail(0, -1.0, 0.2);
+  const brace = new THREE.CylinderGeometry(0.045, 0.045, 1, 5); const bm = new THREE.InstancedMesh(brace, railM, n * 4); let bi = 0;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const add = (a, b) => { const d = b.clone().sub(a); const len = d.length(); q.setFromUnitVectors(Y, d.normalize()); m.compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(1, len, 1)); bm.setMatrixAt(bi++, m); };
+  for (let i = 0; i < n; i += 3) { add(Lr[i], Sp[i]); add(Rr[i], Sp[i]); add(Lr[i], Rr[i]); if (i + 3 <= n) add(Rr[i], Sp[Math.min(n, i + 3)]); }
+  bm.count = bi; bm.castShadow = true; g.add(bm);
+  const supM = new THREE.MeshStandardMaterial({ color: supportColor, metalness: 0.2, roughness: 0.5 });
+  for (let i = 0; i < n; i += 22) { const f = frames[i]; if (f.p.y < 3 || f.up.y < 0.2) continue; const h = f.p.y - 1.0; const s = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.34, h, 8), supM); s.position.set(f.p.x, h / 2, f.p.z); s.castShadow = true; g.add(s); }
   g.curve = curve; g.frames = frames;
   return g;
 }
@@ -98,7 +101,23 @@ export function makeWagon(color, seats = 2) {
 export function makePark(scene) {
   const W = new THREE.Group(); scene.add(W);
   const R = { group: W };
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshStandardMaterial({ map: grassTex(), roughness: 0.95 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; W.add(ground);
+  // terrain vallonné (plat sur l'aire de jeu)
+  const hgt = (x, z) => { const d = Math.hypot((x + 10) / 1.3, z + 30); const k = Math.min(1, Math.max(0, (d - 95) / 80)); return k * (9 * Math.sin(x * 0.012 + 1) * Math.cos(z * 0.015) + 6 * Math.sin(x * 0.03 + z * 0.02) + 7); };
+  const tg = new THREE.PlaneGeometry(1600, 1600, 260, 260); tg.rotateX(-Math.PI / 2);
+  { const pos = tg.attributes.position; const cols = new Float32Array(pos.count * 3); const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), z = pos.getZ(i); pos.setY(i, hgt(x, z)); const n = hash(Math.floor(x * 0.3) * 13 + Math.floor(z * 0.3)); c.setHSL(0.26 + n * 0.05, 0.62, 0.21 + n * 0.07); cols.set([c.r, c.g, c.b], i * 3); }
+    tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals(); }
+  const ground = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); ground.receiveShadow = true; W.add(ground);
+  // herbe en brins, par zones (instanciée)
+  { const blade = new THREE.BufferGeometry(); blade.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.025, 0, 0, 0.025, 0, 0, 0, 0.24, 0.02]), 3)); blade.computeVertexNormals();
+    const zones = [[8, 6, 26, 70000], [-52, 6, 16, 22000], [-30, 4, 18, 22000], [4, -64, 26, 45000], [44, -70, 18, 22000], [600 - 600, 0, 0, 0]];
+    const total = zones.reduce((a, z) => a + z[3], 0); const im = new THREE.InstancedMesh(blade, new THREE.MeshStandardMaterial({ color: '#ffffff', side: THREE.DoubleSide, roughness: 0.9 }), total);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), pp = new THREE.Vector3(), c = new THREE.Color(); let i = 0;
+    for (const [zx, zz, zr, zn] of zones) for (let k = 0; k < zn; k++, i++) { const r = Math.sqrt(hash(i * 3.1)) * zr, a = hash(i * 7.3) * Math.PI * 2; pp.set(zx + Math.cos(a) * r, 0, zz + Math.sin(a) * r); e.set((hash(i + 2) - 0.5) * 0.7, hash(i + 3) * 6.28, (hash(i + 4) - 0.5) * 0.7); q.setFromEuler(e); const kk = 0.7 + hash(i + 5) * 1.0; sc.set(kk, kk * (0.8 + hash(i + 6) * 0.9), kk); m4.compose(pp, q, sc); im.setMatrixAt(i, m4); c.setHSL(0.24 + hash(i + 7) * 0.08, 0.62, 0.2 + hash(i + 8) * 0.15); im.setColorAt(i, c); }
+    im.count = i; im.receiveShadow = true; W.add(im); }
+  // ciels (dômes en dégradé)
+  const dome = (top, bottom) => { const gg = new THREE.SphereGeometry(2500, 32, 16); const cc = []; const pp2 = gg.attributes.position; for (let i = 0; i < pp2.count; i++) { const y = pp2.getY(i) / 2500; const k = Math.pow(Math.max(0, y), 0.45); const col = new THREE.Color(bottom).lerp(new THREE.Color(top), k); cc.push(col.r, col.g, col.b); } gg.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); return new THREE.Mesh(gg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, toneMapped: false })); };
+  R.skyDay = dome('#1f6fe5', '#bfe2ff'); R.skyNight = dome('#020616', '#1c2c5c'); W.add(R.skyDay); W.add(R.skyNight);
   // allées
   for (const [x, z, w, d] of [[0, 14, 140, 6], [-30, -20, 6, 70]]) { const p = plane(W, w, d, mat('#e9d8b4', { roughness: 0.9 }), x, 0.03, z); p.rotation.x = -Math.PI / 2; p.receiveShadow = true; }
   // montagnes russes du créateur (rouge) et du rival (blanche), en contrebas / au loin
@@ -106,7 +125,7 @@ export function makePark(scene) {
   R.creatorOrigin = V3(0, 0, 0); R.rivalOrigin = V3(30, 0, -70);
   // gare du créateur
   const st = new THREE.Group(); st.position.set(-56, 0, -1.6); W.add(st);
-  box(st, 10, 2, 6, '#c62828', 0, 1, 0); box(st, 12, 0.5, 8, '#ffd23f', 0, 5.5, 0); for (const x of [-5, 5]) for (const z of [-3.5, 3.5]) box(st, 0.4, 5.5, 0.4, '#ffffff', x, 2.75, z);
+  box(st, 10, 2, 6, '#9c6b43', 0, 1, 0); box(st, 10.2, 0.2, 6.2, '#b9875a', 0, 2.05, 0); box(st, 12, 0.5, 8, '#ffd23f', 0, 5.5, 0); for (const x of [-5, 5]) for (const z of [-3.5, 3.5]) box(st, 0.4, 5.5, 0.4, '#ffffff', x, 2.75, z);
   // gare du rival
   const sr = new THREE.Group(); sr.position.set(30 - 56, 0, -71.6); W.add(sr);
   box(sr, 10, 2, 6, '#e8e8e8', 0, 1, 0); box(sr, 12, 0.5, 8, '#d4af37', 0, 5.5, 0); for (const x of [-5, 5]) for (const z of [-3.5, 3.5]) box(sr, 0.4, 5.5, 0.4, '#d4af37', x, 2.75, z);
@@ -117,8 +136,14 @@ export function makePark(scene) {
   R.gondolas = [];
   for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; box(R.wheel, 0.25, 20, 0.25, '#c9d1da', Math.cos(a) * 10, Math.sin(a) * 10, 0, false).rotation.z = a - Math.PI / 2; const gd = box(W, 2.2, 2.2, 2.2, ['#e53935', '#fdd835', '#1e88e5', '#43a047'][k % 4], 0, 0, 0); gd.userData.a = a; R.gondolas.push(gd); }
   R.wheelBulbs = [];
-  // arbres
-  for (let k = 0; k < 60; k++) { const a = hash(k) * Math.PI * 2, r = 70 + hash(k + 1) * 90; const x = Math.cos(a) * r, z = Math.sin(a) * r - 20; const t = new THREE.Group(); t.position.set(x, 0, z); W.add(t); box(t, 0.8, 3, 0.8, '#6d4c41', 0, 1.5, 0); const c = new THREE.Mesh(new THREE.IcosahedronGeometry(3 + hash(k + 2) * 2, 0), mat('#2e7d32', { flatShading: true })); c.position.y = 5.5; c.castShadow = true; t.add(c); }
+  // arbres (instanciés, feuillage en plusieurs boules)
+  { const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.28, 0.42, 3.2, 7), new THREE.MeshStandardMaterial({ color: '#5b4330', roughness: 1 }), 160);
+    const leaves = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.85 }), 640);
+    const m4 = new THREE.Matrix4(), c = new THREE.Color(); let ti = 0, li = 0;
+    for (let k = 0; k < 160; k++) { const a = hash(k) * Math.PI * 2, r = 75 + hash(k + 1) * 150; const x = Math.cos(a) * r - 10, z = Math.sin(a) * r - 30; const y = hgt(x, z), s2 = 0.9 + hash(k + 2) * 1.0;
+      m4.compose(V3(x, y + 1.6 * s2, z), new THREE.Quaternion(), V3(s2, s2, s2)); trunk.setMatrixAt(ti++, m4);
+      for (let j = 0; j < 4; j++) { const o = [[0, 4.4, 0, 2.6], [1.3, 3.8, 0.4, 1.8], [-1.2, 4.0, -0.3, 1.9], [0.2, 5.6, 0.2, 1.7]][j]; m4.compose(V3(x + o[0] * s2, y + o[1] * s2, z + o[2] * s2), new THREE.Quaternion(), V3(o[3] * s2, o[3] * s2 * 0.9, o[3] * s2)); leaves.setMatrixAt(li, m4); c.setHSL(0.27 + hash(k * 4 + j) * 0.06, 0.55, 0.24 + hash(k + j) * 0.1); leaves.setColorAt(li++, c); } }
+    trunk.count = ti; leaves.count = li; trunk.castShadow = leaves.castShadow = true; W.add(trunk); W.add(leaves); }
   // stands
   for (const [x, z, col] of [[-20, 22, '#e53935'], [-6, 24, '#1e88e5'], [10, 22, '#fdd835']]) { const g = new THREE.Group(); g.position.set(x, 0, z); W.add(g); box(g, 5, 3, 3.5, '#ffffff', 0, 1.5, 0); box(g, 5.6, 0.6, 4, col, 0, 3.3, 0); }
   // bannière d'inauguration + guirlandes
@@ -137,9 +162,15 @@ export function makePark(scene) {
   const stg = new THREE.BufferGeometry(); stg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
   R.stars = new THREE.Points(stg, new THREE.PointsMaterial({ color: '#ffffff', size: 2.2, sizeAttenuation: false, fog: false })); W.add(R.stars);
   R.moon = new THREE.Mesh(new THREE.SphereGeometry(30, 20, 14), new THREE.MeshBasicMaterial({ color: '#fff8e0', fog: false })); R.moon.position.set(120, 260, -520); W.add(R.moon);
-  // nuages
+  // nuages (billboards doux)
   R.clouds = [];
-  for (let k = 0; k < 12; k++) { const c = new THREE.Group(); for (let j = 0; j < 4; j++) { const s = new THREE.Mesh(new THREE.SphereGeometry(6 + hash(k * 9 + j) * 5, 12, 10), mat('#ffffff', { roughness: 1 })); s.position.set(j * 7, hash(k + j) * 3, hash(k * 3 + j) * 4); c.add(s); } c.position.set(-200 + hash(k) * 400, 90 + hash(k + 1) * 40, -250 - hash(k + 2) * 150); W.add(c); R.clouds.push(c); }
+  { const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
+    for (let k = 0; k < 30; k++) { const gx = 128 + (hash(k) - 0.5) * 120, gy = 140 + (hash(k + 1) - 0.5) * 50, gr = 40 + hash(k + 2) * 40; const gd = x.createRadialGradient(gx, gy, 0, gx, gy, gr); gd.addColorStop(0, 'rgba(255,255,255,.95)'); gd.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gd; x.fillRect(0, 0, 256, 256); }
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+    for (let k = 0; k < 14; k++) { const sp2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false, toneMapped: false })); sp2.position.set(-300 + hash(k + 50) * 600, 90 + hash(k + 51) * 70, -300 - hash(k + 52) * 250); sp2.scale.set(110 + hash(k) * 70, 48 + hash(k + 3) * 24, 1); W.add(sp2); R.clouds.push(sp2); } }
+  // halo de lune
+  { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d'); const gd = x.createRadialGradient(64, 64, 10, 64, 64, 64); gd.addColorStop(0, 'rgba(255,248,220,.6)'); gd.addColorStop(1, 'rgba(255,248,220,0)'); x.fillStyle = gd; x.fillRect(0, 0, 128, 128);
+    R.moonGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false, fog: false, toneMapped: false })); R.moonGlow.position.copy(R.moon.position).multiplyScalar(0.98); R.moonGlow.scale.set(220, 220, 1); W.add(R.moonGlow); }
   // wagons
   R.wagonC = makeWagon('#e53935'); W.add(R.wagonC);
   R.wagonR = makeWagon('#f2f2f2'); W.add(R.wagonR);
