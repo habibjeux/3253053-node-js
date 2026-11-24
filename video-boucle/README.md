@@ -14,10 +14,13 @@ noir épais, petit torse habillé, membres en traits noirs fins — `src/stick.j
 - **Le final** : le créateur passe la boucle en goutte, la boucle circulaire du rival explose au loin.
 
 Les boucles sont construites par leur courbure κ(s) (cercle → base élargie → clothoïde), voir `loopPoints`
-dans `src/world.js`. Minutage provisoire (63 s) dans `src/timeline.js`, à recaler sur la voix-off.
+dans `src/world.js`. Les 20 répliques de la voix-off (ElevenLabs « Maxime », 76 s, posée à +0,3 s) et les événements sont calés
+dans `src/timeline.js` ; la vidéo dure 79 s.
 
 ```bash
 npm install
 node render.mjs --preview 2,30,55 --scale 0.5
 node render.mjs --workers 3
+node audio.mjs                 # orgue de foire, cliquetis, maillet, crash, explosion → out/bande_son.wav
+./mix.sh out/voix/voix.mp3     # → out/boucle_9x16.mp4
 ```

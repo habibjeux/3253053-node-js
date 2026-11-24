@@ -192,7 +192,7 @@ function compose(t) {
     if (sub) outlined(sub, 0, 92, 60, '#ffd23f', '#141218', 10);
     ctx.restore();
   }
-  if (OV.diagram) drawDiagram(OV.diagram.age);
+  if (OV.diagram) drawDiagram(OV.diagram.t);
   drawSubtitles(t, OV.subY);
   if (OV.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${clamp(OV.flash)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
   if (OV.fade > 0) { ctx.fillStyle = `rgba(0,0,0,${clamp(OV.fade)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
@@ -273,163 +273,196 @@ function drawLoopDiagram(prof, cx, cy, scale, prog, title, sub) {
   ctx.restore();
 }
 
-// ---------------- plans ----------------
+// ---------------- plans (calés sur la voix-off) ----------------
 const SHOTS = []; const shot = (t0, t1, fn) => SHOTS.push({ t0, t1, fn });
-// hook : le créateur présente sa boucle géante
-shot(0, 2.6, (lt, t) => {
-  setMode('day'); setTrack(R, 'c', 0); setTrack(R, 'r', 0).visible = false; shadowAt(14, 0, 4, 30);
-  const P = C.createur; P.at(10, 0, 7, 0.2); P.setFace('happy');
-  const a = smooth(range(lt, 0.1, 0.6)); P.armL.rotation.z = -2.2 * a; P.armR.rotation.z = 2.2 * a; P.armL.rotation.x = P.armR.rotation.x = -0.3 * a;
-  camKeys(lt, [[0, [6, 0.8, 16], [12, 9, -1], 58], [2.6, [5, 1.2, 13.5], [12, 11, -1], 56]]);
-  OV.hook = { text: 'IL A TOUT MISÉ\nSUR UNE SEULE BOUCLE.', age: lt - 0.05, dur: 2.6 };
+const presenter = (P, lt) => { P.at(10, 0, 7, 0.2); P.setFace('happy'); const a = smooth(range(lt, 0.1, 0.6)); P.armL.rotation.z = -2.2 * a; P.armR.rotation.z = 2.2 * a; P.armL.rotation.x = P.armR.rotation.x = -0.3 * a; };
+// « Il a tordu la boucle de ses montagnes russes. »
+shot(0, 2.76, (lt, t) => {
+  setMode('day'); setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = false; shadowAt(14, 0, 4, 30);
+  const P = C.createur; presenter(P, lt);
+  camKeys(lt, [[0, [6, 0.8, 18], [12, 11, -1], 58], [2.76, [5, 1.2, 15], [12, 13, -1], 56]]);
+  OV.hook = { text: 'IL A TORDU\nSA BOUCLE.', age: lt - 0.05, dur: 2.7 };
 });
-// le portefeuille vide
-shot(2.6, 5.2, (lt, t) => {
+// « la première attraction à faire passer les gens à l'envers… ça lui a coûté tout ce qu'il avait »
+shot(2.76, 5.4, (lt, t) => {
+  setMode('day'); setTrack(R, 'c', 0); setTrack(R, 'r', 0).visible = false; shadowAt(14, 0, 4, 30);
+  const P = C.createur; presenter(P, lt + 1);
+  camKeys(lt, [[0, [6, 0.8, 16], [12, 9, -1], 58], [2.64, [5, 1.2, 13.5], [12, 11, -1], 56]]);
+  comic("À L'ENVERS !", 540, 520, lt - 0.6, { size: 100, color: GOLD, rot: -0.06, dur: 1.8 });
+});
+shot(5.4, 7.97, (lt, t) => {
   setMode('day'); setTrack(R, 'c', 0); setTrack(R, 'r', 0).visible = false; shadowAt(10, 0, 7, 10);
   const P = C.createur; P.at(10, 0, 7, 0.2); P.setFace(t < EV.wallet + 0.4 ? 'neutral' : 'pain');
   P.armL.rotation.x = P.armR.rotation.x = -1.0; P.armL.rotation.z = 0.3; P.armR.rotation.z = -0.3; P.headG.rotation.x = 0.3;
   P.root.updateMatrixWorld(true); const hand = P.armR.localToWorld(V3(-0.3, -0.95, 0.2));
-  R.wallet.visible = true; R.wallet.position.copy(hand); R.wallet.rotation.set(0, 0.2, 0); R.walletLid.rotation.x = -1.8 * smooth(range(t, EV.wallet, EV.wallet + 0.4));
-  camKeys(lt, [[0, [12.8, 3.0, 14.5], [10.2, 2.0, 7], 46], [2.6, [12.4, 2.8, 13.2], [10.2, 1.9, 7], 42]]);
-  comic('0 €', 540, 520, t - EV.wallet - 0.4, { size: 190, color: RED, rot: -0.06, dur: 2.0 });
+  R.wallet.visible = true; R.wallet.position.copy(hand); R.wallet.rotation.set(0, 0.2, Math.PI * smooth(range(t, EV.wallet + 0.6, EV.wallet + 1.0))); R.walletLid.rotation.x = -1.8 * smooth(range(t, EV.wallet, EV.wallet + 0.4));
+  camKeys(lt, [[0, [12.8, 3.0, 14.5], [10.2, 2.0, 7], 46], [2.57, [12.4, 2.8, 13.2], [10.2, 1.9, 7], 42]]);
+  comic('0 €', 540, 520, t - EV.wallet - 0.4, { size: 190, color: RED, rot: -0.06, dur: 1.6 });
 });
-// le rival copie le plan et construit un cercle parfait
-shot(5.2, 9, (lt, t) => {
+// « son rival la copie à l'identique, boulon par boulon »
+shot(7.97, 12.04, (lt, t) => {
   setMode('day'); setTrack(R, 'c', 0); const tr = setTrack(R, 'r', 0); tr.visible = true;
-  tr.scale.y = 0.05 + 0.95 * easeOut(range(t, EV.rivalBuild + 0.6, 8.6)); shadowAt(RO.x + 10, 0, RO.z, 40);
+  tr.scale.y = 0.05 + 0.95 * easeOut(range(t, EV.rivalBuild + 0.6, 11.6)); shadowAt(RO.x + 10, 0, RO.z, 40);
   const V = C.rival; V.at(RO.x + 22, 0, RO.z + 8, -0.6); V.setFace('smirk'); V.armR.rotation.x = -1.4; V.armL.rotation.x = -1.2;
   V.root.updateMatrixWorld(true); R.plan.visible = true; R.plan.position.copy(V.armR.localToWorld(V3(-0.4, -1.0, 0.3))); R.plan.rotation.set(-0.3, -0.6 + Math.PI, 0);
-  camKeys(lt, [[0, TO(RO, 30, 3.2, 20), TO(RO, 21, 2.6, 8), 44], [1.2, TO(RO, 30, 4, 22), TO(RO, 18, 4, 4), 50], [3.8, TO(RO, 36, 8, 34), TO(RO, 12, 10, 0), 52]]);
+  camKeys(lt, [[0, TO(RO, 30, 3.2, 20), TO(RO, 21, 2.6, 8), 44], [1.3, TO(RO, 30, 4, 22), TO(RO, 18, 4, 4), 50], [4.07, TO(RO, 36, 8, 34), TO(RO, 12, 10, 0), 52]]);
   tag('LE RIVAL', HEAD(V), lt - 0.2, 1.6, '#111', '#ffd21f');
-  comic('COPIÉ !', 540, 560, lt - 1.6, { size: 110, color: GOLD, rot: -0.06, dur: 1.6 });
+  comic('BOULON PAR BOULON', 540, 560, lt - 2.2, { size: 70, color: GOLD, rot: -0.05, dur: 1.8, burst: false });
 });
-// la veille de l'ouverture, de nuit : test du wagon rouge
-shot(9, 12, (lt, t) => {
+// « la veille de l'ouverture, son mannequin de test revient écrasé comme une canette »
+shot(12.04, 14.2, (lt, t) => {
   setMode('night'); const tr = setTrack(R, 'c', 0); setTrack(R, 'r', 0).visible = true; shadowAt(-20, 0, 0, 50, [-0.4, 1, 0.6]); bulbsAt(t);
-  R.wagonC.visible = true; const u = lerp(uAtX(tr, -30), uAtX(tr, LOOPX + 6, 0.5) , easeIn(range(lt, 0, 3)));
+  R.wagonC.visible = true; const u = lerp(uAtX(tr, -30), uAtX(tr, LOOPX + 6, 0.5), easeIn(range(lt, 0, 2.16)));
   placeOnTrack(R.wagonC, tr, u, CO); ride(C.dummy, R.wagonC, 'neutral');
-  camKeys(lt, [[0, [-48, 3, 18], [-56, 7, 4.5], 50], [3, [-30, 10, 34], [0, 12, 0], 54]]);
-  OV.title = lt < 2 ? { text: 'VEILLE DE L\'OUVERTURE', age: lt, sub: 'TEST DE NUIT' } : null;
-  OV.vignette = 0.7; OV.fade = 1 - range(lt, 0, 0.4);
+  camKeys(lt, [[0, [-48, 3, 18], [-56, 7, 4.5], 50], [2.16, [-30, 10, 34], [0, 12, 0], 54]]);
+  OV.title = { text: "VEILLE DE L'OUVERTURE", age: lt, sub: 'TEST DE NUIT' };
+  OV.vignette = 0.7; OV.fade = 1 - range(lt, 0, 0.35);
 });
-// le wagon revient… le mannequin est écrasé
-shot(12, 16, (lt, t) => {
+shot(14.2, 16.64, (lt, t) => {
   setMode('night'); const tr = setTrack(R, 'c', 0); shadowAt(-50, 0, 0, 20, [-0.4, 1, 0.6]); bulbsAt(t);
-  R.wagonC.visible = true; const u = lerp(uAtX(tr, -75 + 140) > 0.9 ? 0.0 : 0.0, 0.02, easeOut(range(lt, 0, 1.2)));
-  const uS = uAtX(tr, -46); placeOnTrack(R.wagonC, tr, uS + 0.02 * (1 - easeOut(range(lt, 0, 1.2))), CO);
+  R.wagonC.visible = true; const uS = uAtX(tr, -46); placeOnTrack(R.wagonC, tr, uS + 0.02 * (1 - easeOut(range(lt, 0, 1.0))), CO);
   ride(C.dummy, R.wagonC, 'pain'); C.dummy.root.translateY(0.9); C.dummy.root.scale.set(1.35, 0.42, 1.3); C.dummy.headG.rotation.z = 0.5; C.dummy.armL.rotation.z = -1.4; C.dummy.armR.rotation.z = 1.4;
-  const P = C.createur; P.at(-44.5, 0, 3.2, -Math.PI * 0.75); P.setFace(t > EV.testReturn + 0.8 ? 'scared' : 'surprised'); P.armL.rotation.x = P.armR.rotation.x = -2.6 * smooth(range(t, EV.testReturn + 0.8, EV.testReturn + 1.2));
   const w = R.wagonC.position;
-  camKeys(lt, [[0, [w.x + 7, w.y + 3.5, w.z + 6], [w.x, w.y + 1.2, w.z], 40], [4, [w.x + 5.5, w.y + 3, w.z + 5], [w.x, w.y + 1.2, w.z], 36]]);
-  fill.position.set(w.x + 2, 5, w.z + 3); fill.intensity = 30; fill.color.set('#ffe0a0');
-  comic('CRAC !', 540, 560, t - EV.testReturn - 0.3, { size: 140, color: GOLD, rot: -0.08, dur: 1.1 });
+  camKeys(lt, [[0, [w.x + 7, w.y + 3.5, w.z + 6], [w.x, w.y + 1.2, w.z], 40], [2.44, [w.x + 5.5, w.y + 3, w.z + 5], [w.x, w.y + 1.2, w.z], 36]]);
+  fill.position.set(w.x + 2, w.y + 5, w.z + 3); fill.intensity = 30; fill.color.set('#ffe0a0');
+  comic('CRAC !', 540, 560, t - EV.crush, { size: 140, color: GOLD, rot: -0.08, dur: 1.1 });
   OV.vignette = 0.7;
 });
-// le maillet : il élargit la base de la boucle
-shot(16, 22, (lt, t) => {
+// le maillet : il aplatit le bas de la boucle
+shot(16.64, 23.1, (lt, t) => {
   setMode('night'); const m = shapeAt(t); setTrack(R, 'c', m); shadowAt(LOOPX, 0, 0, 30, [-0.4, 1, 0.6]); bulbsAt(t);
   const P = C.createur; P.at(LOOPX - 9, 0, 4.2, Math.PI * 0.8); P.setFace('determined');
   let hit = 0; for (const h of EV.hammer) { const a = t - h; if (a > -0.35 && a < 0.1) hit = a < 0 ? (a + 0.35) / 0.35 : 1 - a / 0.1; }
   P.armR.rotation.x = -2.8 + hit * 1.6; P.armL.rotation.x = -2.6 + hit * 1.6;
   P.root.updateMatrixWorld(true); R.mallet.visible = t > EV.mallet; R.mallet.position.copy(P.armR.localToWorld(V3(0, -0.9, 0))); R.mallet.quaternion.copy(P.armR.getWorldQuaternion(new THREE.Quaternion())); R.mallet.rotateX(Math.PI / 2);
   sparks(t, EV.hammer, V3(LOOPX - 10, 2, 2));
-  camKeys(lt, [[0, [LOOPX - 13, 3.5, 15], [LOOPX - 6, 5, 0], 52], [6, [LOOPX - 10, 5, 22], [LOOPX - 2, 8, 0], 54]]);
+  camKeys(lt, [[0, [LOOPX - 13, 3.5, 15], [LOOPX - 6, 5, 0], 52], [6.46, [LOOPX - 10, 5, 22], [LOOPX - 2, 8, 0], 54]]);
   fill.position.set(LOOPX - 8, 6, 8); fill.intensity = 40; fill.color.set('#ffe0a0');
   for (const h of EV.hammer) comic('BANG', 300 + hash(h) * 480, 600 + hash(h + 1) * 200, t - h, { size: 90, color: GOLD, rot: (hash(h) - 0.5) * 0.3, dur: 0.5 });
-  tag('LE CRÉATEUR', HEAD(P), lt - 0.2, 1.6, '#ffffff', '#e53935');
+  tag('LE PROPRIÉTAIRE', HEAD(P), lt - 0.2, 1.6, '#ffffff', '#e53935');
   OV.vignette = 0.7;
 });
-// le rival se faufile et resserre les côtés : haute et étroite
-shot(22, 28.5, (lt, t) => {
+// « Est-ce qu'il sait vraiment ce qu'il fait ? Pas vraiment. »
+shot(23.1, 25.65, (lt, t) => {
+  setMode('night'); setTrack(R, 'c', 1); bulbsAt(t);
+  const P = C.createur; P.at(LOOPX - 9, 0, 4.2, 0.2); P.setFace(t < EV.notReally ? 'neutral' : 'surprised');
+  P.armR.rotation.x = -2.6; P.armR.rotation.z = 0.7; P.headG.rotation.z = Math.sin(lt * 3) * 0.12; // il se gratte la tête
+  P.root.updateMatrixWorld(true); R.mallet.visible = true; R.mallet.position.copy(P.armL.localToWorld(V3(0, -0.9, 0))); R.mallet.quaternion.copy(P.armL.getWorldQuaternion(new THREE.Quaternion()));
+  look([LOOPX - 8, 2.8, 9.5], [LOOPX - 9, 2.4, 4.2], 44);
+  fill.position.set(LOOPX - 7, 4, 8); fill.intensity = 30; fill.color.set('#ffe0a0');
+  comic('?', 760, 640, t - EV.question, { size: 170, color: GOLD, rot: 0.1, dur: 1.6 });
+  comic('PAS VRAIMENT.', 540, 520, t - EV.notReally, { size: 80, color: '#ffffff', rot: -0.04, dur: 0.9, burst: false });
+  OV.vignette = 0.7;
+});
+// « Son rival rit, puis se faufile et resserre les côtés… pour que le premier wagon casse comme une brindille »
+shot(25.65, 33.65, (lt, t) => {
   setMode('night'); const m = shapeAt(t); setTrack(R, 'c', m); shadowAt(LOOPX, 0, 0, 30, [-0.4, 1, 0.6]); bulbsAt(t);
-  const V = C.rival; const x = lerp(LOOPX + 26, LOOPX + 10.5, smooth(range(lt, 0, 2.2)));
-  V.at(x, 0, 3.2, -Math.PI / 2); if (lt < 2.2) V.sneak(lt * 7); V.setFace('evil');
-  let hit = 0; for (const h of EV.tighten) { const a = t - h; if (a > -0.35 && a < 0.1) hit = a < 0 ? (a + 0.35) / 0.35 : 1 - a / 0.1; }
-  if (lt > 2.2) { V.armR.rotation.x = -2.8 + hit * 1.6; V.armL.rotation.x = -2.0; }
-  V.root.updateMatrixWorld(true); R.mallet.visible = lt > 2.2; R.mallet.position.copy(V.armR.localToWorld(V3(0, -0.9, 0))); R.mallet.quaternion.copy(V.armR.getWorldQuaternion(new THREE.Quaternion())); R.mallet.rotateX(Math.PI / 2);
-  sparks(t, EV.tighten, V3(LOOPX + 9, 3, 2));
-  camKeys(lt, [[0, [LOOPX + 30, 2.5, 18], [LOOPX + 22, 2.2, 3], 46], [2.4, [LOOPX + 22, 4, 26], [LOOPX + 8, 8, 0], 52], [6.5, [LOOPX + 16, 8, 38], [LOOPX, 14, 0], 56]]);
-  for (const h of EV.tighten) comic('TOC', 760, 640 + hash(h) * 200, t - h, { size: 80, color: SILVER, rot: 0.1, dur: 0.45 });
-  comic('HAUTE ET ÉTROITE…', 540, 520, t - EV.tighten[3] - 0.4, { size: 64, color: SILVER, rot: -0.04, dur: 1.2, burst: false });
+  const V = C.rival;
+  if (lt < 1.6) { V.at(LOOPX + 26, 0, 6, -Math.PI / 2 - 0.4); V.setFace('laugh'); V.torso.rotation.x = Math.sin(lt * 18) * 0.08 - 0.1; V.armL.rotation.x = V.armR.rotation.x = -0.6; look([LOOPX + 22.5, 2.6, 9], [LOOPX + 26, 2.2, 6], 42); comic('HA HA HA', 540, 600, lt - 0.1, { size: 90, color: '#ffffff', rot: -0.06, dur: 1.4, burst: false }); }
+  else {
+    const x = lerp(LOOPX + 26, LOOPX + 10.5, smooth(range(lt, 1.6, 3.0)));
+    V.at(x, 0, 3.2, -Math.PI / 2); if (lt < 3.0) V.sneak(lt * 7); V.setFace('evil');
+    let hit = 0; for (const h of EV.tighten) { const a = t - h; if (a > -0.35 && a < 0.1) hit = a < 0 ? (a + 0.35) / 0.35 : 1 - a / 0.1; }
+    if (lt > 3.0) { V.armR.rotation.x = -2.8 + hit * 1.6; V.armL.rotation.x = -2.0; }
+    V.root.updateMatrixWorld(true); R.mallet.visible = lt > 3.0; R.mallet.position.copy(V.armR.localToWorld(V3(0, -0.9, 0))); R.mallet.quaternion.copy(V.armR.getWorldQuaternion(new THREE.Quaternion())); R.mallet.rotateX(Math.PI / 2);
+    sparks(t, EV.tighten, V3(LOOPX + 9, 3, 2));
+    camKeys(lt, [[1.6, [LOOPX + 30, 2.5, 18], [LOOPX + 22, 2.2, 3], 46], [3.4, [LOOPX + 22, 4, 26], [LOOPX + 8, 8, 0], 52], [8, [LOOPX + 16, 8, 38], [LOOPX, 14, 0], 56]]);
+    for (const h of EV.tighten) comic('TOC', 760, 640 + hash(h) * 200, t - h, { size: 80, color: SILVER, rot: 0.1, dur: 0.45 });
+    comic('HAUTE ET ÉTROITE', 540, 520, t - EV.tighten[3] - 0.3, { size: 64, color: SILVER, rot: -0.04, dur: 1.1, burst: false });
+    comic('CRAC… ?', 540, 680, t - EV.twig, { size: 90, color: RED, rot: 0.06, dur: 1.2 });
+  }
   OV.vignette = 0.75;
 });
-// le jour de l'ouverture : la foule devant le cercle parfait du rival
-shot(28.5, 31, (lt, t) => {
+// « Le lendemain matin, toute la ville fait la queue devant le cercle parfait du rival. »
+shot(33.65, 37.72, (lt, t) => {
   setMode('day'); setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true; shadowAt(RO.x - 50, 0, RO.z + 6, 30);
   C.queue.forEach((q, k) => { q.at(RO.x - 46 + k * 1.6, 0, RO.z + 6 + (k % 2) * 0.8, -Math.PI / 2); q.setFace(k % 3 ? 'happy' : 'surprised'); q.headG.rotation.x = -0.2; q.walk(t * 2 + k, 0.08); });
   const F = C.fille; F.at(RO.x - 30, 0, RO.z + 9, -2.4); F.setFace('happy'); F.armR.rotation.x = -2.7;
   F.root.updateMatrixWorld(true); R.balloon.visible = true; R.balloon.position.copy(F.armR.localToWorld(V3(0, -0.9, 0))); R.balloon.rotation.z = Math.sin(t * 1.5) * 0.12;
   C.pere.at(RO.x - 28, 0, RO.z + 10, -2.2).setFace('happy'); C.mere.at(RO.x - 27, 0, RO.z + 8.6, -2.6).setFace('happy');
-  const V = C.rival; V.at(RO.x - 52, 0, RO.z + 3.2, 0.2); V.setFace('smirk'); V.armL.rotation.z = -1.0;
-  camKeys(lt, [[0, TO(RO, -20, 3, 22), TO(RO, -40, 2, 4), 48], [2.5, TO(RO, -18, 6, 24), TO(RO, -30, 8, 0), 50]]);
-  OV.title = lt < 1.6 ? { text: "JOUR J", age: lt, sub: "L'INAUGURATION" } : null;
+  camKeys(lt, [[0, TO(RO, -20, 3, 22), TO(RO, -40, 2, 4), 48], [4.07, TO(RO, -18, 6, 24), TO(RO, -30, 8, 0), 50]]);
+  OV.title = lt < 1.8 ? { text: 'LE LENDEMAIN', age: lt, sub: "L'INAUGURATION" } : null;
 });
-// les deux hommes montent dans leurs wagons… la montée
-shot(31, 35.4, (lt, t) => {
-  setMode('day'); const tc = setTrack(R, 'c', 2); const trr = setTrack(R, 'r', 0); trr.visible = true;
-  const u0 = uAtX(tc, -40), u1 = uAtX(tc, -14.5);
-  const u = lerp(u0, u1, smooth(range(lt, 0, 4.4)));
-  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, 'happy');
-  R.wagonR.visible = true; placeOnTrack(R.wagonR, trr, u, RO); ride(C.rival, R.wagonR, 'smirk');
-  const w = R.wagonC.position; shadowAt(w.x, w.y, w.z, 20);
-  if (lt < 2.2) camKeys(lt, [[0, [w.x + 4, w.y + 3, w.z + 7], [w.x, w.y + 1, w.z], 44], [2.2, [w.x + 4, w.y + 3, w.z + 7], [w.x, w.y + 1, w.z], 44]]);
-  else { const r = R.wagonR.position; look([r.x + 5, r.y + 3, r.z + 8], [r.x, r.y + 1, r.z], 44); }
-  comic('CLIC-CLIC-CLIC', 540, 560, lt - 0.3, { size: 70, color: '#fff', rot: -0.04, dur: 3.6, burst: false });
+// « Et le rival monte devant pour faire le malin. »
+shot(37.72, 39.82, (lt, t) => {
+  setMode('day'); const trr = setTrack(R, 'r', 0); trr.visible = true; setTrack(R, 'c', 2);
+  R.wagonR.visible = true; placeOnTrack(R.wagonR, trr, uAtX(trr, -58), RO); ride(C.rival, R.wagonR, 'smirk');
+  C.rival.armR.rotation.x = -2.8; C.rival.armR.rotation.z = 0.4 + Math.sin(lt * 10) * 0.2; // il salue la foule
+  const r = R.wagonR.position; shadowAt(r.x, 0, r.z, 12);
+  look([r.x + 4.5, r.y + 2.6, r.z + 6], [r.x, r.y + 1.6, r.z], 42);
+  comic('AU PREMIER RANG !', 540, 520, lt - 0.3, { size: 64, color: GOLD, rot: -0.04, dur: 1.6, burst: false });
 });
-// la crête… et la boucle haute et étroite devant lui
-shot(35.4, 40, (lt, t) => {
+// « Le propriétaire monte dans le sien… le wagon bascule au sommet… il voit la boucle haute et étroite »
+shot(39.82, 44.2, (lt, t) => {
   setMode('day'); const tc = setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true;
-  const u = lerp(uAtX(tc, -14.5), uAtX(tc, -8.8), smooth(range(lt, 0, 1.6)));
-  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, lt < 1.2 ? 'happy' : 'scared');
-  R.wagonC.updateMatrixWorld(true);
-  const w = R.wagonC.position; const eye = V3(w.x - 6, w.y + 4, w.z + 2.5), ahead = V3(LOOPX, 9, 0);
-  look(eye.toArray(), ahead.toArray(), 60);
-  shadowAt(LOOPX, 0, 0, 30);
-  comic('?!', 820, 560, lt - 1.4, { size: 150, color: RED, rot: 0.1, dur: 1.6 });
+  const u = lerp(uAtX(tc, -40), uAtX(tc, -14.5), smooth(range(lt, 0, 4.38)));
+  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, 'happy');
+  const w = R.wagonC.position; shadowAt(w.x, w.y, w.z, 20);
+  camKeys(lt, [[0, [w.x + 4, w.y + 3, w.z + 7], [w.x, w.y + 1, w.z], 44], [4.38, [w.x + 4, w.y + 3, w.z + 7], [w.x, w.y + 1, w.z], 44]]);
+  comic('CLIC-CLIC-CLIC', 540, 560, lt - 0.3, { size: 70, color: '#fff', rot: -0.04, dur: 3.8, burst: false });
 });
-// démonstration : virage serré lentement… puis à grande vitesse
-shot(40, 48, (lt, t) => {
+shot(44.2, 47.69, (lt, t) => {
+  setMode('day'); const tc = setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true;
+  const u = lerp(uAtX(tc, -14.5), uAtX(tc, -11.5), smooth(range(lt, 0, 2.6)));
+  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, lt < 1.4 ? 'happy' : 'scared');
+  const w = R.wagonC.position; const eye = V3(w.x - 3, w.y + 4, w.z + 16), ahead = V3(LOOPX - 4, 10, 0);
+  look(eye.toArray(), ahead.toArray(), 58);
+  shadowAt(LOOPX, 0, 0, 30);
+  comic('?!', 820, 560, lt - 1.6, { size: 150, color: RED, rot: 0.1, dur: 1.6 });
+});
+// « Mais il est trop tard. »
+shot(47.69, 49.26, (lt, t) => {
+  setMode('day'); const tc = setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true;
+  const u = lerp(uAtX(tc, -11.5), uAtX(tc, -5.5), easeIn(range(lt, 0, 1.57)));
+  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, 'scared');
+  C.createur.armL.rotation.x = C.createur.armR.rotation.x = -2.9;
+  R.wagonC.updateMatrixWorld(true); const eye = R.wagonC.localToWorld(V3(0, 3.2, -4.5)), ahead = R.wagonC.localToWorld(V3(0, 0, 12));
+  look(eye.toArray(), ahead.toArray(), 64); shake(0.04, t);
+  comic('TROP TARD.', 540, 520, lt - 0.1, { size: 90, color: RED, rot: -0.05, dur: 1.4, burst: false });
+});
+// démonstration : virage en épingle à 5 km/h… puis à 100 km/h
+shot(49.26, 56.2, (lt, t) => {
   setMode('demo'); shadowAt(600, 0, 0, 25);
   const Rr = D.R;
   const pos = (car, a) => { car.position.set(Math.cos(a) * Rr, 0, -Math.sin(a) * Rr); car.rotation.set(0, a + Math.PI, 0); };
   D.carSlow.visible = t < EV.fastCar; D.carFast.visible = t >= EV.fastCar;
-  if (t < EV.fastCar) { const a = lerp(0, Math.PI, smooth(range(lt, 0.2, 3.8))); pos(D.carSlow, a); camKeys(lt, [[0, [600, 16, 22], [600, 0, -2], 48], [4, [600, 18, 24], [600, 0, -3], 48]]); comic('LENT + SERRÉ = OK', 540, 420, lt - 0.4, { size: 66, color: '#43d17a', rot: -0.04, dur: 3.4, burst: false }); }
+  if (t < EV.fastCar) { const a = lerp(0, Math.PI, smooth(range(lt, 0.2, 3.7))); pos(D.carSlow, a); camKeys(lt, [[0, [600, 16, 22], [600, 0, -2], 48], [3.9, [600, 18, 24], [600, 0, -3], 48]]); comic('5 KM/H : OK', 540, 420, lt - 0.6, { size: 80, color: '#43d17a', rot: -0.04, dur: 3.2, burst: false }); }
   else {
     const u = t - EV.fastCar; const tr = EV.roll - EV.fastCar;
-    if (u < tr) pos(D.carFast, lerp(-0.2, 0.6, u / tr));
+    if (u < tr) pos(D.carFast, lerp(-0.6, 0.6, u / tr));
     else { const a = 0.6; pos(D.carFast, a); const k = u - tr; D.carFast.position.x += -Math.sin(a) * k * 9 + Math.cos(a) * k * 6; D.carFast.position.z += -Math.cos(a) * k * 9; D.carFast.position.y = Math.max(0, Math.sin(Math.min(k * 3, Math.PI)) * 2); D.carFast.rotateZ(Math.min(k * 7, Math.PI * 2.5)); }
-    camKeys(lt - 4, [[0, [600, 16, 22], [608, 0, -2], 48], [4, [606, 14, 20], [612, 0, -6], 50]]);
+    camKeys(u, [[0, [600, 16, 22], [608, 0, -2], 48], [3, [606, 14, 20], [612, 0, -6], 50]]);
     if (u > tr && u < tr + 0.6) shake(0.08, t);
-    comic('RAPIDE + SERRÉ = TONNEAU', 540, 420, u - tr, { size: 60, color: RED, rot: -0.04, dur: 2.2, burst: false });
+    comic('100 KM/H', 540, 420, u - 0.1, { size: 90, color: RED, rot: -0.04, dur: 1.6, burst: false });
+    comic('TONNEAU !', 540, 560, u - tr, { size: 110, color: RED, rot: -0.06, dur: 1.2 });
   }
 });
-// le tracé : où le wagon va vite, où la courbe est serrée
-shot(48, 55, (lt, t) => {
+// le tracé : cercle (rapide + serré en bas) puis goutte (doux en bas, serré en haut, au ralenti)
+shot(56.2, 70.53, (lt, t) => {
   setMode('day'); setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true; shadowAt(LOOPX, 0, 0, 30);
   look([LOOPX + 2, 14, 46], [LOOPX, 12, 0], 50);
-  OV.diagram = { age: lt };
+  OV.diagram = { t };
 });
-// le créateur passe la boucle haute sans encombre
-shot(55, 59.4, (lt, t) => {
+// « Alors il passe au-dessus sans une égratignure… »
+shot(70.53, 72.95, (lt, t) => {
   setMode('day'); const tc = setTrack(R, 'c', 2); setTrack(R, 'r', 0).visible = true;
-  const u0 = uAtX(tc, 2), u1 = uAtX(tc, LOOPX + 14, 0.55);
-  const u = lerp(u0, u1, range(lt, 0, 4.4));
+  const u = lerp(uAtX(tc, 4), uAtX(tc, LOOPX + 10, 0.55), range(lt, 0, 2.42));
   R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, u, CO); ride(C.createur, R.wagonC, 'laugh');
   C.createur.armL.rotation.x = C.createur.armR.rotation.x = -2.9;
   const w = R.wagonC.position; shadowAt(LOOPX, 0, 0, 30);
   look([LOOPX + 3, 13, 42], [w.x * 0.4 + LOOPX * 0.6, w.y * 0.5 + 8, 0], 46);
-  comic('YOUHOU !', 760, 560, lt - 1.4, { size: 110, color: GOLD, rot: 0.08, dur: 1.4 });
+  comic('YOUHOU !', 760, 560, lt - 0.8, { size: 110, color: GOLD, rot: 0.08, dur: 1.4 });
 });
-// au loin, la boucle circulaire du rival explose
-shot(59.4, DURATION, (lt, t) => {
-  setMode('day'); const tc = setTrack(R, 'c', 2); const trr = setTrack(R, 'r', 0); trr.visible = t < EV.boom + 0.25;
-  R.wagonC.visible = true; placeOnTrack(R.wagonC, tc, lerp(uAtX(tc, LOOPX + 14, 0.55), uAtX(tc, LOOPX + 40, 0.6), range(lt, 0, 3.6)), CO); ride(C.createur, R.wagonC, t > EV.boom + 0.5 ? 'surprised' : 'happy');
-  const w = R.wagonC.position;
-  boom(t, EV.boom, V3(RO.x + LOOPX, RO.y + 10, RO.z));
-  look([w.x + 6, 4.5, w.z + 9], [RO.x + LOOPX - 10, 12, RO.z], 50);
-  if (t > EV.boom && t < EV.boom + 0.8) shake(0.12 * (1 - range(t, EV.boom, EV.boom + 0.8)), t);
+// « …pendant que le wagon du rival percute le bas de ce cercle parfait. »
+shot(72.95, DURATION, (lt, t) => {
+  setMode('day'); setTrack(R, 'c', 2); const trr = setTrack(R, 'r', 0); trr.visible = t < EV.boom + 0.25;
+  const uB = uAtX(trr, LOOPX - 7);
+  if (t < EV.boom) { R.wagonR.visible = true; placeOnTrack(R.wagonR, trr, lerp(uAtX(trr, -9), uB, easeIn(range(t, EV.rivalDrop, EV.boom))), RO); ride(C.rival, R.wagonR, t > EV.boom - 0.7 ? 'scared' : 'smirk'); }
+  boom(t, EV.boom, V3(RO.x + LOOPX - 7, RO.y + 3, RO.z));
+  camKeys(lt, [[0, TO(RO, 34, 10, 52), TO(RO, 0, 12, 0), 48], [2.0, TO(RO, 40, 12, 60), TO(RO, 4, 10, 0), 50], [6, TO(RO, 46, 16, 70), TO(RO, 4, 14, 0), 52]]);
+  if (t > EV.boom && t < EV.boom + 0.8) shake(0.14 * (1 - range(t, EV.boom, EV.boom + 0.8)), t);
   OV.flash = t > EV.boom && t < EV.boom + 0.2 ? 0.6 : 0;
-  comic('BOUM !', 540, 520, t - EV.boom - 0.15, { size: 170, color: '#ff8a1f', rot: -0.08, dur: 1.6 });
+  comic('BOUM !', 540, 520, t - EV.boom - 0.12, { size: 170, color: '#ff8a1f', rot: -0.08, dur: 1.5 });
   if (t > EV.endTitle) OV.title = { text: 'LA BONNE COURBE', age: t - EV.endTitle, sub: 'CHANGE TOUT' };
   OV.fade = range(t, DURATION - 0.7, DURATION - 0.05);
 });
@@ -450,15 +483,22 @@ function renderFrame(t) {
   renderer.render(scene, camera);
   compose(t);
 }
-function drawDiagram(a) {
+function drawDiagram(t) {
   ctx.save(); ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  ctx.fillStyle = `rgba(6,10,24,${0.82 * Math.min(1, a / 0.4)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  const prog1 = range(a, 0.3, 2.8), prog2 = range(a, 2.6, 5.2);
+  ctx.fillStyle = `rgba(6,10,24,${0.84 * range(t, EV.diagCircle, EV.diagCircle + 0.4)})`; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  const prog1 = range(t, EV.diagCircle + 0.2, EV.diagCircle + 3.6), prog2 = range(t, EV.diagDrop + 0.1, EV.diagDrop + 5.2);
   drawLoopDiagram(PROF.circle, 290, 1080, 14, prog1, 'CERCLE', 'SERRÉ LÀ OÙ ÇA VA VITE');
-  drawLoopDiagram(PROF.drop, 790, 1080, 14, prog2, 'GOUTTE', 'SERRÉ LÀ OÙ ÇA RALENTIT');
-  ctx.textAlign = 'center'; ctx.font = `italic 900 46px ${SANS}`; ctx.lineWidth = 10; ctx.strokeStyle = '#000';
+  if (t > EV.diagDrop - 0.1) drawLoopDiagram(PROF.drop, 790, 1080, 14, prog2, 'GOUTTE', 'SERRÉ LÀ OÙ ÇA RALENTIT');
+  const tagAt = (txt, x, y, col, t0) => { const s2 = easeOutBack(range(t, t0, t0 + 0.25)); if (s2 <= 0) return; ctx.save(); ctx.translate(x, y); ctx.scale(s2, s2); ctx.font = `italic 900 38px ${SANS}`; const w = ctx.measureText(txt).width + 36; ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(-w / 2, -28, w, 56, 28); ctx.fill(); ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, 0, 2); ctx.restore(); };
+  tagAt('ÇA VA VITE', 290, 980, '#ffffff', 57.6);
+  tagAt('VIRAGE SERRÉ', 290, 1180 - 400, '#ff2d3d', 59.2);
+  tagAt('MANNEQUIN ÉCRASÉ', 290, 560, '#ff2d3d', EV.diagCrushed);
+  tagAt('BAS TOUT DOUX', 790, 980, '#43d17a', 63.6);
+  tagAt('SERRÉ EN HAUT', 790, 640, '#ffd21f', EV.diagTop);
+  tagAt('AU RALENTI', 790, 515, '#ffffff', 68.6);
+  ctx.textAlign = 'center'; ctx.font = `italic 900 46px ${SANS}`;
   const legend = [['#43d17a', 'DOUX'], ['#ffd21f', 'FORT'], ['#ff2d3d', 'DANGER']];
-  legend.forEach(([c, l], k) => { const x = 250 + k * 270, y = 420; ctx.fillStyle = c; ctx.beginPath(); ctx.roundRect(x - 110, y - 32, 220, 64, 32); ctx.fill(); ctx.fillStyle = '#111'; ctx.fillText(l, x, y + 3); });
+  legend.forEach(([c, l], k) => { const x = 250 + k * 270, y = 420; ctx.fillStyle = c; ctx.beginPath(); ctx.roundRect(x - 110, y - 32, 220, 64, 32); ctx.fill(); ctx.fillStyle = '#111'; ctx.textBaseline = 'middle'; ctx.fillText(l, x, y + 3); });
   ctx.restore();
 }
 window.renderFrame = (t, type = 'image/jpeg', q = 0.93) => { renderFrame(t); return out.toDataURL(type, q); };
