@@ -54,6 +54,8 @@ function drawFace(ctx, expr, o = {}) {
     case 'grin': brow(-1, 18); brow(1, 18); eye(-1, 0.7, 0.3); eye(1, 0.7, 0.3); ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(190, 345); ctx.quadraticCurveTo(256, 410, 322, 345); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
     default: brow(-1, 8); brow(1, 8); eye(-1, 0.85, 0.2); eye(1, 0.85, 0.2); mouthLine(26, 368, 0);
   }
+  if (o.talk) { ctx.fillStyle = '#3a1418'; ctx.beginPath(); ctx.ellipse(256, 368, 30, 8 + 14 * o.talk, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = ink; ctx.lineWidth = 8; ctx.stroke(); }
+  if (o.blood) { ctx.fillStyle = 'rgba(170,10,20,0.9)'; ctx.beginPath(); ctx.moveTo(120, 60); ctx.quadraticCurveTo(150, 140, 135, 230); ctx.lineTo(150, 230); ctx.quadraticCurveTo(170, 130, 160, 60); ctx.fill(); ctx.beginPath(); ctx.ellipse(330, 330, 24, 14, 0.4, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(250, 395, 10, 60); }
   if (o.marks) { // dark marks under the eyes (possessed look)
     ctx.strokeStyle = '#111'; ctx.lineWidth = 8;
     for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(256 + s * 60, 300); ctx.lineTo(256 + s * 150, 300); ctx.stroke(); ctx.beginPath(); ctx.moveTo(256 + s * 75, 318); ctx.lineTo(256 + s * 135, 318); ctx.stroke(); }
@@ -111,6 +113,9 @@ export const SPECS = {
   studentA: { skin: 0xf0dfcc, hair: { style: 'spiky', color: 0x16120f, seed: 5, len: 0.45, count: 50 }, top: 0x111116, collar: 0x111116, buttons: true, pants: 0x111116, shoes: 0x0c0c10 },
   studentB: { skin: 0xf2e2d0, hair: { style: 'short', color: 0x2a1a12, fringe: true }, top: 0x1b1e33, shirt: 0xf2f2f2, bow: 0xa0202a, pants: 0x1b1e33, shoes: 0x0c0c10 },
   studentC: { skin: 0xeedbc6, hair: { style: 'short', color: 0x3a2418, long: true, fringe: true }, top: 0x1b1e33, shirt: 0xf2f2f2, bow: 0xa0202a, pants: 0x262a45, skirt: true, shoes: 0x0c0c10 },
+  athlete: { skin: 0xe6cfb6, hair: { style: 'short', color: 0x2a1a10 }, top: 0xf0f0f0, pants: 0x2340a0, shoes: 0xf0f0f0 },
+  athlete2: { skin: 0xd8b896, hair: { style: 'spiky', color: 0x1a120c, seed: 8, len: 0.4, count: 40, fringeCount: 0 }, top: 0x2340a0, pants: 0x2340a0, shoes: 0xf0f0f0 },
+  adult2: { skin: 0xe2c8ae, hair: { style: 'short', color: 0x5a4030, long: true }, top: 0x6a4a5a, pants: 0x2a2530, shoes: 0x1a1410 },
   adult: { skin: 0xead6c0, hair: { style: 'short', color: 0x1e1a18 }, top: 0x3b3f4a, shirt: 0xe8e8e8, tie: 0x6a1f24, pants: 0x2a2d35, shoes: 0x1a1410 },
 };
 

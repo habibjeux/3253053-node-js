@@ -235,7 +235,7 @@ export function setBedroom() {
 }
 
 // school classroom at golden hour
-export function setClassroom() {
+export function setClassroom(o = {}) {
   const scene = baseScene(0x2a1e18, 0.01); const ups = [];
   scene.add(new THREE.HemisphereLight(0xffe0c0, 0x302018, 0.9));
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: floorTex(), roughness: 0.6 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
@@ -248,7 +248,7 @@ export function setClassroom() {
   scene.add(box(0.3, 12, 40, wallM, -12, 6, 0));
   // desks
   const deskTop = M(0xc89a62, { rough: 0.5 }), metal = M(0x5a5e66, { metal: 0.6, rough: 0.4 });
-  for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) {
+  if (o.desks !== false) for (let row = 0; row < 4; row++) for (let col = 0; col < 4; col++) {
     const g = new THREE.Group(); g.position.set(-7.5 + col * 5, 0, -4 + row * 4.5);
     g.add(box(2.6, 0.15, 1.8, deskTop, 0, 2.6, 0, 0.03)); g.add(box(0.15, 2.6, 0.15, metal, -1.1, 1.3, -0.7)); g.add(box(0.15, 2.6, 0.15, metal, 1.1, 1.3, -0.7)); g.add(box(0.15, 2.6, 0.15, metal, -1.1, 1.3, 0.7)); g.add(box(0.15, 2.6, 0.15, metal, 1.1, 1.3, 0.7));
     scene.add(g);
@@ -302,4 +302,108 @@ export function setDark() {
   ups.push(fogSprites(scene, 45, [-30, 30, 0.3, 3, -30, 15], 0x7a40c0, 0.22, 7, 14));
   ups.push(dust(scene, 500, [-15, 15, 0.5, 12, -25, 12], 0xc0a0ff, 8));
   return { scene, update: t => ups.forEach(u => u(t)) };
+}
+
+// ======== additional sets & props for the story ========
+export function monitor() { // heart monitor with animated trace
+  const g = new THREE.Group();
+  const c = document.createElement('canvas'); c.width = 256; c.height = 160; const x = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  g.add(box(1.6, 1.1, 0.6, M(0x2a2d33, { metal: 0.4, rough: 0.5 }), 0, 0, 0, 0.06));
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 0.85), new THREE.MeshBasicMaterial({ map: tex })); scr.position.z = 0.31; g.add(scr);
+  g.userData.draw = (t, flat) => {
+    x.fillStyle = '#031208'; x.fillRect(0, 0, 256, 160); x.strokeStyle = flat ? '#ff4040' : '#30ff80'; x.lineWidth = 4; x.beginPath();
+    for (let i = 0; i < 256; i++) { const ph = ((i / 256) * 2 + t * 1.2) % 1; let y = 80; if (!flat && ph > 0.45 && ph < 0.55) y = 80 - Math.sin((ph - 0.45) / 0.1 * Math.PI * 2) * 55; i ? x.lineTo(i, y) : x.moveTo(i, y); }
+    x.stroke(); tex.needsUpdate = true;
+  };
+  return g;
+}
+export function desk() {
+  const g = new THREE.Group(); const top = M(0xc89a62, { rough: 0.5 }), metal = M(0x5a5e66, { metal: 0.6, rough: 0.4 });
+  g.add(box(2.6, 0.15, 1.8, top, 0, 2.6, 0, 0.03)); for (const [x, z] of [[-1.1, -0.7], [1.1, -0.7], [-1.1, 0.7], [1.1, 0.7]]) g.add(box(0.15, 2.6, 0.15, metal, x, 1.3, z));
+  return g;
+}
+export function papers() { const g = new THREE.Group(); for (let i = 0; i < 3; i++) { const p = box(0.9, 0.02, 1.2, M(0xf4f2ea), (i - 1) * 0.15, 0.01 + i * 0.02, (i - 1) * 0.1); p.rotation.y = (i - 1) * 0.15; g.add(p); } const pen = box(0.06, 0.06, 0.7, M(0x1a2a6a), 0.3, 0.1, 0.1); pen.rotation.y = 0.6; g.add(pen); return g; }
+export function shotPut() { const s = new THREE.Mesh(new THREE.SphereGeometry(0.35, 20, 14), M(0x6a6e78, { metal: 0.8, rough: 0.3 })); s.castShadow = true; return s; }
+export function wallClock(hour = 5) {
+  const g = new THREE.Group();
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#f6f2e8'; x.beginPath(); x.arc(128, 128, 124, 0, Math.PI * 2); x.fill(); x.lineWidth = 10; x.strokeStyle = '#222'; x.stroke();
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; x.fillStyle = '#222'; x.fillRect(128 + Math.sin(a) * 100 - 4, 128 - Math.cos(a) * 100 - 4, 8, 8); }
+  x.lineCap = 'round'; x.lineWidth = 10; x.beginPath(); x.moveTo(128, 128); x.lineTo(128 + Math.sin(hour / 12 * Math.PI * 2) * 60, 128 - Math.cos(hour / 12 * Math.PI * 2) * 60); x.stroke();
+  x.lineWidth = 6; x.beginPath(); x.moveTo(128, 128); x.lineTo(128, 40); x.stroke();
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  g.add(new THREE.Mesh(new THREE.CircleGeometry(1, 32), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 })));
+  return g;
+}
+export function talismanBox(open = 0, glow = 0) { // old box holding the finger, sealed with paper talismans
+  const g = woodBox(open);
+  const f = cursedFinger(); f.scale.setScalar(0.35); f.position.set(0, 0.55, 0); f.rotation.z = Math.PI / 2; f.position.x = 0.4; g.add(f);
+  f.userData.light.intensity = glow * 6; g.userData.finger = f; return g;
+}
+export function setField() { // athletics field at sunset
+  const scene = baseScene(0x6a8fbf, 0.006);
+  scene.background = new THREE.Color(0xf2a066);
+  scene.add(new THREE.HemisphereLight(0xffe2c0, 0x4a6a3a, 1.2));
+  const grass = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), M(0x4f8a3c)); grass.rotation.x = -Math.PI / 2; grass.receiveShadow = true; scene.add(grass);
+  const track = new THREE.Mesh(new THREE.RingGeometry(40, 52, 64), M(0xb5533a)); track.rotation.x = -Math.PI / 2; track.position.set(0, 0.02, -60); scene.add(track);
+  const circle = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.5, 32), M(0xf2f2f2)); circle.rotation.x = -Math.PI / 2; circle.position.y = 0.03; scene.add(circle);
+  for (let i = 0; i < 12; i++) { const fl = box(0.1, 1.2, 0.1, M(0xffffff), (i % 2 ? 1 : -1) * (3 + i), 0.6, -10 - i * 6); scene.add(fl); }
+  // stands
+  const st = M(0x8a8f99); for (let k = 0; k < 4; k++) scene.add(box(80, 1.2, 3, st, 0, 0.6 + k * 1.2, -115 - k * 3));
+  const sun = shadowLight(0xffc080, 3, [-30, 18, -40], 40); scene.add(sun);
+  const disc = new THREE.Mesh(new THREE.SphereGeometry(12, 24, 16), M(0xfff0c0, { emissive: 0xffc070, ei: 2 })); disc.position.set(-60, 25, -220); scene.add(disc);
+  return { scene, update: () => {} };
+}
+export function setSchoolNight() { // exterior: 4 floors, top floor windows shattered
+  const scene = baseScene(0x080616, 0.02); const ups = [];
+  scene.add(new THREE.HemisphereLight(0x5a5ac0, 0x050308, 0.7));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ map: stoneTex(), roughness: 0.5 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const b = M(0x24222e, { rough: 0.9 }); scene.add(box(70, 26, 8, b, 0, 13, -30));
+  const glassM = M(0x1a1830, { rough: 0.2, metal: 0.3 }), brokenM = M(0x8040ff, { emissive: 0x6a20ff, ei: 1.6 });
+  for (let fl = 0; fl < 4; fl++) for (let i = 0; i < 13; i++) { const top = fl === 3; scene.add(box(3.4, 3, 0.2, top ? brokenM : glassM, -30 + i * 5, 3.5 + fl * 6, -25.9)); }
+  scene.add(box(72, 1, 9, M(0x16141c), 0, 26.5, -30));
+  const glowL = new THREE.PointLight(0x8a40ff, 40, 60, 1.4); glowL.position.set(0, 21, -22); scene.add(glowL);
+  // falling glass shards
+  const shardM = M(0xd0c8ff, { emissive: 0x8070ff, ei: 0.8, rough: 0.1 }); const shards = []; const r = rng(31);
+  for (let i = 0; i < 80; i++) { const s = box(0.25, 0.4, 0.03, shardM, -30 + r() * 60, 22, -25 + r() * 2); s.userData = { v: 2 + r() * 6, ph: r() * 10, x0: s.position.x }; scene.add(s); shards.push(s); }
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(6, 24, 16), M(0xf4f6ff, { emissive: 0xdfe6ff, ei: 1.5 })); moon.position.set(-25, 45, -90); scene.add(moon);
+  scene.add(shadowLight(0x9fa8ff, 1.2, [-20, 30, 20], 40));
+  ups.push(fogSprites(scene, 30, [-40, 40, 0.3, 3, -25, 15], 0x6a40c0, 0.2, 3, 16));
+  return { scene, update: t => { ups.forEach(u => u(t)); shards.forEach(s => { const k = (t * 0.25 + s.userData.ph) % 1; s.position.y = 22 - k * 22 * s.userData.v / 4; s.rotation.set(t * s.userData.v, t * 2, 0); s.visible = s.position.y > 0.1; }); } };
+}
+export function setClassNight(o = {}) { // dark classroom lit by purple glow and moonlight
+  const S = setClassroom(o); const scene = S.scene;
+  scene.background = new THREE.Color(0x07060f); scene.fog = new THREE.FogExp2(0x07060f, 0.03);
+  scene.traverse(o => { if (o.isLight) o.intensity *= 0.12; if (o.isMesh && o.material.emissive && o.material.emissiveIntensity > 1) { o.material = o.material.clone(); o.material.color.set(0x30306a); o.material.emissive.set(0x1a1a50); } });
+  scene.add(new THREE.HemisphereLight(0x5040a0, 0x050308, 0.5));
+  const moon = shadowLight(0x8090ff, 1.4, [22, 14, 4], 26); scene.add(moon);
+  const purple = new THREE.PointLight(0x9a30ff, 30, 30, 1.5); purple.position.set(0, 6, -4); scene.add(purple);
+  return { scene, update: S.update, purple };
+}
+export function setClubroom() { // occult club: curtains drawn, candles, evening
+  const S = setClassroom(); const scene = S.scene;
+  scene.traverse(o => { if (o.isLight) o.intensity *= 0.35; });
+  const curtain = M(0x4a1218, { rough: 0.9 });
+  for (let i = 0; i < 4; i++) { const c = box(0.2, 9, 5.6, curtain, 11.7, 5.5, -9 + i * 6.5); scene.add(c); }
+  const cands = []; for (const [x, z] of [[-5.6, -4.4], [-4.6, -3.7], [-3.6, -4.4]]) { const c = candle(0.8); c.position.set(x + 3, 2.68, z + 4); scene.add(c); cands.push(c); }
+  const clk = wallClock(5); clk.position.set(-6, 9.3, -11.8); scene.add(clk);
+  const pentagram = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.35, 5), M(0xd02030, { emissive: 0x801010 })); pentagram.position.set(5, 8.5, -11.8); scene.add(pentagram);
+  return { scene, update: t => { S.update(t); cands.forEach(c => flicker(c, t)); } };
+}
+export function setHospitalNight() {
+  const S = setBedroom(); const scene = S.scene;
+  scene.background = new THREE.Color(0x0a0c14);
+  scene.traverse(o => { if (o.isLight && !o.isHemisphereLight) o.intensity *= 0.25; if (o.isHemisphereLight) { o.color.set(0x6070b0); o.intensity = 0.6; } if (o.isMesh && o.material.emissive && o.material.emissiveIntensity >= 1.4) { o.material = o.material.clone(); o.material.color.set(0x1a2550); o.material.emissive.set(0x10183a); } });
+  const moon = shadowLight(0x8a9cff, 1.0, [10, 9, -16]); scene.add(moon);
+  scene.add(new THREE.HemisphereLight(0x8090d0, 0x201810, 0.9));
+  const warm = new THREE.PointLight(0xffc890, 14, 16, 1.4); warm.position.set(2.4, 5.5, 1.5); scene.add(warm);
+  return S;
+}
+export function debris(n = 40, seed = 5) { // wall chunks flying, driven by u in [0,1]
+  const g = new THREE.Group(); const r = rng(seed); const m = M(0xd8d0c0, { rough: 0.9 });
+  const ps = [];
+  for (let i = 0; i < n; i++) { const s = 0.2 + r() * 0.7; const b = box(s, s * (0.5 + r()), s, m); b.userData = { v: new THREE.Vector3((r() - 0.5) * 8, 2 + r() * 6, 4 + r() * 10), w: new THREE.Vector3(r() * 6, r() * 6, r() * 6), p0: new THREE.Vector3((r() - 0.5) * 2, 1 + r() * 4, 0) }; g.add(b); ps.push(b); }
+  g.userData.at = t => ps.forEach(b => { const u = b.userData; const tt = Math.max(0, t); b.position.set(u.p0.x + u.v.x * tt, Math.max(0.2, u.p0.y + u.v.y * tt - 9.8 * tt * tt), u.p0.z + u.v.z * tt); b.rotation.set(u.w.x * tt, u.w.y * tt, u.w.z * tt); });
+  return g;
 }

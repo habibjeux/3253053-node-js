@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body><script type="module">
+import { Film } from '/web/film.js';
+const q = new URLSearchParams(location.search);
+const story = await import('/web/' + q.get('story') + '.js');
+const timing = await (await fetch(q.get('timing'))).json();
+const film = new Film(story.makeShots(timing), timing);
+window.frame = t => film.frame(t);
+window.shotTimes = film.shots.map(s => s.t0);
+window.ready = true;
+</script></body></html>
