@@ -52,7 +52,7 @@ voice = np.pad(voice, (0, N - len(voice)))
 wav_write(os.path.join(B, "voice_raw.wav"), voice)
 # deeper, warmer voice: slight pitch-down (formant preserved), EQ, gentle compression
 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", os.path.join(B, "voice_raw.wav"), "-af",
-                "rubberband=pitch=0.88:formant=preserved,highpass=f=70,equalizer=f=140:t=q:w=1:g=4,equalizer=f=3200:t=q:w=1.5:g=2,"
+                ("" if timing.get("voiceSource") == "external" else "rubberband=pitch=0.88:formant=preserved,") + "highpass=f=70,equalizer=f=140:t=q:w=1:g=4,equalizer=f=3200:t=q:w=1.5:g=2,"
                 "acompressor=threshold=-20dB:ratio=3:attack=5:release=120,aresample=48000",
                 "-ar", str(SR), os.path.join(B, "voice_proc.wav")], check=True)
 v = wav_read(os.path.join(B, "voice_proc.wav"))

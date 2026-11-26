@@ -1,51 +1,134 @@
 {
   "voice": "fr-gilles-low",
-  "highlight": ["bruit", "nuit", "suivre", "cadavre", "sauteur", "moisissure", "ongles", "tendus", "genoux", "sautant", "loin", "village", "prêtre", "morts", "avertissement", "porte", "regarder", "bambou", "rentrer", "affamé", "voir", "talisman", "front", "immobiliser", "vent", "libérée", "clochette", "Éloigne-toi", "retourne", "légende", "un par un", "enterrées", "obscurité"],
+  "highlight": [
+    "bruit",
+    "nuit",
+    "suivre",
+    "cadavre",
+    "sauteur",
+    "moisissure",
+    "ongles",
+    "tendus",
+    "genoux",
+    "sautant",
+    "loin",
+    "village",
+    "prêtre",
+    "morts",
+    "avertissement",
+    "porte",
+    "regarder",
+    "bambou",
+    "rentrer",
+    "affamé",
+    "voir",
+    "talisman",
+    "front",
+    "immobiliser",
+    "vent",
+    "libérée",
+    "clochette",
+    "Éloigne-toi",
+    "retourne",
+    "légende",
+    "un par un",
+    "enterrées",
+    "obscurité",
+    "Boum"
+  ],
   "scenes": [
-    { "id": 1, "lead": 1.4, "lines": [
-      "En Chine, si tu entends ce bruit pendant la nuit, ne reste surtout pas dehors.",
-      "Car il pourrait déjà être en train de te suivre."
-    ]},
-    { "id": 2, "lead": 0.8, "lines": [
-      "Selon une ancienne légende, il s'agirait d'un cadavre sauteur."
-    ]},
-    { "id": 3, "lead": 0.6, "lines": [
-      "On raconte qu'il porte la robe décolorée d'un ancien fonctionnaire, recouverte de moisissure.",
-      "Ses ongles sont extrêmement longs et ses bras restent tendus devant lui."
-    ]},
-    { "id": 4, "lead": 0.6, "lines": [
-      "Il ne peut pas plier les genoux.",
-      "Il ne peut pas marcher.",
-      "Alors, il avance en sautant."
-    ]},
-    { "id": 5, "lead": 1.2, "lines": [
-      "Selon la légende, autrefois, les personnes qui mouraient loin de leur village devaient être ramenées dans leur région pour y être enterrées."
-    ]},
-    { "id": 6, "lead": 0.6, "lines": [
-      "Mais certains villages étaient beaucoup trop éloignés.",
-      "Alors, les familles faisaient appel à un prêtre qui marchait devant le cortège, tandis que les morts le suivaient en sautant, un par un."
-    ]},
-    { "id": 7, "lead": 0.8, "lines": [
-      "C'était un avertissement.",
-      "Si tu entendais ce bruit pendant la nuit, tu devais rentrer immédiatement chez toi, fermer ta porte et surtout ne pas regarder dehors."
-    ]},
-    { "id": 8, "lead": 0.8, "lines": [
-      "Parfois, il ne s'agissait que de corps transportés sur de longues perches de bambou, qui rebondissaient à chaque mouvement.",
-      "Mais tous les morts ne parvenaient pas à rentrer chez eux."
-    ]},
-    { "id": 9, "lead": 0.8, "lines": [
-      "Certains racontent qu'un corps laissé sans sépulture pouvait se réveiller, affamé.",
-      "Et le plus terrifiant, c'est qu'il ne peut pas voir correctement.",
-      "Il se repère grâce à ce qui l'entoure."
-    ]},
-    { "id": 10, "lead": 0.8, "lines": [
-      "On raconte également qu'un talisman placé sur son front peut l'immobiliser.",
-      "Mais si une simple rafale de vent l'arrache, la créature peut être libérée."
-    ]},
-    { "id": 11, "lead": 1.0, "lines": [
-      "Alors, si tu te retrouves un jour sur une route de montagne plongée dans l'obscurité et que tu entends une clochette sonner derrière toi, n'attends pas.",
-      "Éloigne-toi de cet endroit.",
-      "Et peu importe combien de temps le bruit continue, ne te retourne surtout pas."
-    ]}
+    {
+      "id": 1,
+      "lead": 1.4,
+      "lines": [
+        "En Chine, si tu entends ce bruit pendant la nuit, ne reste surtout pas dehors.",
+        "Car il pourrait déjà être en train de te suivre."
+      ]
+    },
+    {
+      "id": 2,
+      "lead": 0.8,
+      "lines": [
+        "Selon une ancienne légende, il s'agirait d'un cadavre sauteur."
+      ]
+    },
+    {
+      "id": 3,
+      "lead": 0.6,
+      "lines": [
+        "On raconte qu'il porte la robe décolorée d'un ancien fonctionnaire, recouverte de moisissure.",
+        "Ses ongles sont extrêmement longs et ses bras restent tendus devant lui."
+      ]
+    },
+    {
+      "id": 4,
+      "lead": 0.6,
+      "lines": [
+        "Il ne peut pas plier les genoux.",
+        "Il ne peut pas marcher.",
+        "Alors, il avance en sautant.",
+        "Boum !"
+      ]
+    },
+    {
+      "id": 5,
+      "lead": 1.2,
+      "lines": [
+        "Selon la légende, autrefois, les personnes qui mouraient loin de leur village devaient être ramenées dans leur région pour y être enterrées."
+      ]
+    },
+    {
+      "id": 6,
+      "lead": 0.6,
+      "lines": [
+        "Mais certains villages étaient beaucoup trop éloignés.",
+        "Alors, les familles faisaient appel à un prêtre qui marchait devant le cortège, tandis que les morts le suivaient en sautant, un par un."
+      ]
+    },
+    {
+      "id": 7,
+      "lead": 0.8,
+      "lines": [
+        "C'était un avertissement.",
+        "Si tu entendais ce bruit pendant la nuit, tu devais rentrer immédiatement chez toi, fermer ta porte et surtout ne pas regarder dehors."
+      ]
+    },
+    {
+      "id": 8,
+      "lead": 0.8,
+      "lines": [
+        "Parfois, il ne s'agissait que de corps transportés sur de longues perches de bambou, qui rebondissaient à chaque mouvement.",
+        "Mais tous les morts ne parvenaient pas à rentrer chez eux."
+      ]
+    },
+    {
+      "id": 9,
+      "lead": 0.8,
+      "lines": [
+        "Certains racontent qu'un corps laissé sans sépulture pouvait se réveiller, affamé.",
+        "Et le plus terrifiant, c'est qu'il ne peut pas voir correctement.",
+        "Il se repère grâce à ce qui l'entoure."
+      ]
+    },
+    {
+      "id": 10,
+      "lead": 0.8,
+      "lines": [
+        "On raconte également qu'un talisman placé sur son front peut l'immobiliser.",
+        "Mais si une simple rafale de vent l'arrache, la créature peut être libérée."
+      ]
+    },
+    {
+      "id": 11,
+      "lead": 1.0,
+      "lines": [
+        "Alors, si tu te retrouves un jour sur une route de montagne plongée dans l'obscurité et que tu entends une clochette sonner derrière toi, n'attends pas.",
+        "Éloigne-toi de cet endroit.",
+        "Et peu importe combien de temps le bruit continue, ne te retourne surtout pas."
+      ]
+    }
+  ],
+  "voiceCuts": [
+    24.6
   ]
 }

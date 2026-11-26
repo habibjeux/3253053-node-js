@@ -33,6 +33,7 @@ function build(timing) {
   // S4 — hopping on the road
   cues.s4 = { hopStart: S[4].start + 0.3, hopPeriod: 0.95 };
   series('hop', cues.s4.hopStart + 0.95 * 0.72, S[4].end - 0.1, 0.95, 1.0);
+  if (S[4].lines[3]) { ev.push({ t: L(4, 3).start - 0.02, type: 'boom', strength: 1.3 }); ev.push({ t: L(4, 3).start - 0.02, type: 'door', strength: 0.8 }); }
   // S5 — funeral gong
   ev.push({ t: S[5].start + 0.6, type: 'gong', strength: 0.55 });
   ev.push({ t: S[5].lines[0].end - 2.5, type: 'gong', strength: 0.4 });
